@@ -10,7 +10,7 @@ char pass[] = "secretPassword";    // your network password (use for WPA, or use
 int status = WL_IDLE_STATUS;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
 
   // check for the presence of the shield :
   if (WiFi.status() == WL_NO_SHIELD) {
