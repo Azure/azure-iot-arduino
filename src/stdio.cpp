@@ -5,6 +5,9 @@
 
 #include "Arduino.h"
 
+asm(".global _printf_float");
+asm(".global _scanf_float");
+
 extern "C" {
     size_t _write(int handle, const unsigned char *buf, size_t bufSize)
     {
