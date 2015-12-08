@@ -26,8 +26,10 @@ void setup() {
     // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
     status = WiFi.begin(ssid, pass);
 
-    // wait 10 seconds for connection:
-    delay(10000);
+    if (status != WL_CONNECTED) {
+      // wait 10 seconds for connection:
+      delay(10000);
+    }
   }
   Serial.println("Connected to wifi");
 }
