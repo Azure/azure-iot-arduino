@@ -15,7 +15,7 @@ int NTPClient::begin()
     return _udp.begin(LOCAL_UDP_PORT);
 }
 
-uint32_t NTPClient::getEpochTime(const char* host, int port, long timeout)
+uint32_t NTPClient::getEpochTime(const char* host, int port, unsigned long timeout)
 {
     if (host == NULL || port < 1) {
         return (uint32_t)-1;
@@ -61,7 +61,7 @@ void NTPClient::sendRequest(const char* host, int port)
     _udp.endPacket();
 }
 
-int NTPClient::receiveResponse(long timeout)
+int NTPClient::receiveResponse(unsigned long timeout)
 {
     long start = millis();
     int size = 0;

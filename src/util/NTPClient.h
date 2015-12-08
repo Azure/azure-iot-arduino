@@ -17,13 +17,13 @@ class NTPClient
     public:
         NTPClient();
         int begin();
-        uint32_t getEpochTime(const char* host, int port = NTP_PORT, long timeout = DEFAULT_NTP_TIMEOUT);
+        uint32_t getEpochTime(const char* host, int port = NTP_PORT, unsigned long timeout = DEFAULT_NTP_TIMEOUT);
         void end();
 
     private:
         void prepareRequest();
         void sendRequest(const char* host, int port);
-        int receiveResponse(long timeout);
+        int receiveResponse(unsigned long timeout);
         uint32_t parseResponse();
 
         char        _buffer[NTP_PACKET_SIZE];
