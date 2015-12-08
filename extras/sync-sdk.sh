@@ -36,5 +36,6 @@ copy_filelist "simplesample-http-files.txt" "$SDK_DIR" "$EXAMPLES_SDK_DIR/simple
 
 echo "Storing SDK metadata"
 git ls-remote --get-url > "$SDK_METADATA"
+git rev-parse --abbrev-ref HEAD >> "$SDK_METADATA"
 git rev-parse HEAD >> "$SDK_METADATA"
 cat $SDK_METADATA
