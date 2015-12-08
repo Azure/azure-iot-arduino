@@ -5,6 +5,7 @@
 
 #include "Arduino.h"
 
+// these are needed by the serializer, so force link
 asm(".global _printf_float");
 asm(".global _scanf_float");
 
