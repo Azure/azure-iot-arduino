@@ -10,7 +10,7 @@
 #define NTP_PACKET_SIZE     48
 #define NTP_PORT            123
 
-#define DEFAULT_NTP_TIMEOUT 1000
+#define DEFAULT_NTP_TIMEOUT 10000
 
 class NTPClient
 {
