@@ -1,0 +1,2 @@
+c/iothub_client/samples/iothub_client_sample_http/iothub_client_sample_http.h
+c/iothub_client/samples/iothub_client_sample_http/iothub_client_sample_http.c
