@@ -35,7 +35,7 @@ copy_filelist "iothub-client-sample-http-files.txt" "$SDK_DIR" "$EXAMPLES_SDK_DI
 copy_filelist "simplesample-http-files.txt" "$SDK_DIR" "$EXAMPLES_SDK_DIR/simplesample_http"
 
 echo "Storing SDK metadata"
-git ls-remote --get-url > "$SDK_METADATA"
-git rev-parse --abbrev-ref HEAD >> "$SDK_METADATA"
-git rev-parse HEAD >> "$SDK_METADATA"
+git --git-dir "$SDK_DIR/.git" ls-remote --get-url > "$SDK_METADATA"
+git --git-dir "$SDK_DIR/.git" rev-parse --abbrev-ref HEAD >> "$SDK_METADATA"
+git --git-dir "$SDK_DIR/.git" rev-parse HEAD >> "$SDK_METADATA"
 cat $SDK_METADATA
