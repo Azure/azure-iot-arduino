@@ -1,10 +1,14 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include <time.h>
+#include <sys/time.h>
+
 #include "sdk/httpapi.h"
 #include "sdk/iot_logging.h"
 
 #include "util/HTTPSClient.h"
+#include "util/NTPClient.h"
 
 #define POOL_SIZE 1
 
@@ -12,6 +16,30 @@ HTTPSClient httpsClients[POOL_SIZE];
 
 HTTPAPI_RESULT HTTPAPI_Init(void)
 {
+    time_t epochTime = (time_t)-1;
+    NTPClient ntpClient;
+
+    ntpClient.begin();
+    while (true) {
+        epochTime = ntpClient.getEpochTime("0.pool.ntp.org");
+
+        if (epochTime == (time_t)-1) {
+            LogError("Fetching NTP epoch time failed!\n");
+            delay(5000);
+        } else {
+            LogInfo("Fetched NTP epoch time is: %lu\n", epochTime);
+            break;
+        }
+    }
+    ntpClient.end();
+
+
+    struct timeval tv;
+    tv.tv_sec = epochTime;
+    tv.tv_usec = 0;
+
+    settimeofday(&tv, NULL);
+
     for (int i = 0; i < POOL_SIZE; i++) {
         httpsClients[i] = HTTPSClient();
     }
