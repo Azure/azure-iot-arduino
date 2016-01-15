@@ -1,7 +1,11 @@
 // Copyright (c) Arduino. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-
+#if defined(ARDUINO_ARCH_SAMD)
+#if defined(ARDUINO_SAMD_FEATHER_M0)
+#include "../featherm0/util/HTTPSCLient.h"
+#else
 #include "HTTPSClient.h"
+#endif
 
 // #define DEBUG_STREAM Serial
 
@@ -68,7 +72,7 @@ int HTTPSClient::sendBody(const unsigned char *content, int length)
 int HTTPSClient::readStatus()
 {
     int statusCode = -1;
-    
+
     String status = readLine();
     status.trim();
 
@@ -148,3 +152,4 @@ int HTTPSClient::readBody(unsigned char *content, int length)
 #endif
     return 1;
 }
+#endif

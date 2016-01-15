@@ -1,6 +1,6 @@
 // Copyright (c) Arduino. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-
+#if defined(ARDUINO_ARCH_SAMD)
 #include <stdio.h>
 
 #include "Arduino.h"
@@ -29,3 +29,4 @@ extern "C" {
         return nChars;
     }
 }
+#endif

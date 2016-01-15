@@ -28,7 +28,7 @@ HMACSHA256_RESULT HMACSHA256_ComputeHash(const unsigned char* key, size_t keyLen
     else
     {
         if ((BUFFER_enlarge(hash, 32) != 0) ||
-            (hmac(SHA256, payload, payloadLen, key, keyLen, BUFFER_u_char(hash) ) != 0))
+            (hmac(SHA256, payload, (int)payloadLen, key, (int)keyLen, BUFFER_u_char(hash) ) != 0))
         {
             result = HMACSHA256_ERROR;
         }

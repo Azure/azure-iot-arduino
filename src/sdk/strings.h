@@ -12,7 +12,7 @@ extern "C"
 #include <stddef.h>
 #endif
 
-typedef void* STRING_HANDLE;
+typedef struct STRING_TAG* STRING_HANDLE;
 
 extern STRING_HANDLE STRING_new(void);
 extern STRING_HANDLE STRING_clone(STRING_HANDLE handle);

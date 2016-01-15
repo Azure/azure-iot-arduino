@@ -8,6 +8,7 @@
 #include "gballoc.h"
 
 #include <time.h>
+#include "iothub_client_version.h"
 #include "iothub_client_private.h"
 #include "iothubtransporthttp.h"
 
@@ -47,6 +48,8 @@ static TRANSPORT_PROVIDER thisTransportProvider =
     IoTHubTransportHttp_SetOption, /*pfIoTHubTransport_SetOption IoTHubTransport_SetOption;       */
     IoTHubTransportHttp_Create, /*pfIoTHubTransport_Create IoTHubTransport_Create;                                                  */
     IoTHubTransportHttp_Destroy, /*pfIoTHubTransport_Destroy IoTHubTransport_Destroy;                                                */
+	IoTHubTransportHttp_Register, /* pfIotHubTransport_Register IoTHubTransport_Register; */
+	IoTHubTransportHttp_Unregister, /* pfIotHubTransport_Unregister IoTHubTransport_Unegister; */
     IoTHubTransportHttp_Subscribe, /*pfIoTHubTransport_Subscribe IoTHubTransport_Subscribe;                                            */
     IoTHubTransportHttp_Unsubscribe, /*pfIoTHubTransport_Unsubscribe IoTHubTransport_Unsubscribe;                                        */
     IoTHubTransportHttp_DoWork, /*pfIoTHubTransport_DoWork IoTHubTransport_DoWork; */
@@ -77,15 +80,24 @@ typedef struct HTTPTRANSPORT_HANDLE_DATA_TAG
     DLIST_ENTRY eventConfirmations; /*holds items for event confirmations*/
 }HTTPTRANSPORT_HANDLE_DATA;
 
+IOTHUB_DEVICE_HANDLE IoTHubTransportHttp_Register(TRANSPORT_HANDLE handle, const char* deviceId, const char* deviceKey, PDLIST_ENTRY waitingToSend)
+{
+	return (IOTHUB_DEVICE_HANDLE)handle;
+}
 
-/*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_003: [Otherwise IoTHubTransportHttp_Create shall create an immutable string (further called "event HTTP relative path") from the following pieces: "/devices/" + URL_ENCODED(config->upperConfig->deviceId) + "/messages/events?api-version=2015-08-15-preview".]*/
+void IoTHubTransportHttp_Unregister(IOTHUB_DEVICE_HANDLE deviceHandle)
+{
+	return;
+}
+
+/*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_003: [Otherwise IoTHubTransportHttp_Create shall create an immutable string (further called "event HTTP relative path") from the following pieces: "/devices/" + URL_ENCODED(config->upperConfig->deviceId) + "/messages/events?api-version=2016-02-03".]*/
 static void destroy_eventHTTPrelativePath(HTTPTRANSPORT_HANDLE_DATA* handleData)
 {
     STRING_delete(handleData->eventHTTPrelativePath);
     handleData->eventHTTPrelativePath = NULL;
 }
 
-/*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_003: [Otherwise IoTHubTransportHttp_Create shall create an immutable string (further called "event HTTP relative path") from the following pieces: "/devices/" + URL_ENCODED(config->upperConfig->deviceId) + "/messages/events?api-version=2015-08-15-preview".]*/
+/*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_003: [Otherwise IoTHubTransportHttp_Create shall create an immutable string (further called "event HTTP relative path") from the following pieces: "/devices/" + URL_ENCODED(config->upperConfig->deviceId) + "/messages/events?api-version=2016-02-03".]*/
 static bool create_eventHTTPrelativePath(HTTPTRANSPORT_HANDLE_DATA* handleData, const IOTHUBTRANSPORT_CONFIG* config)
 {
     bool result;
@@ -112,14 +124,14 @@ static bool create_eventHTTPrelativePath(HTTPTRANSPORT_HANDLE_DATA* handleData, 
     return result;
 }
 
-/*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_034: [Otherwise, IoTHubTransportHttp_Create shall create an immutable string (further called "message HTTP relative path") from the following pieces: "/devices/" + URL_ENCODED(config->upperConfig->deviceId) + "/messages/devicebound?api-version=2015-08-15-preview".]*/
+/*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_034: [Otherwise, IoTHubTransportHttp_Create shall create an immutable string (further called "message HTTP relative path") from the following pieces: "/devices/" + URL_ENCODED(config->upperConfig->deviceId) + "/messages/devicebound?api-version=2016-02-03".]*/
 static void destroy_messageHTTPrelativePath(HTTPTRANSPORT_HANDLE_DATA* handleData)
 {
     STRING_delete(handleData->messageHTTPrelativePath);
     handleData->messageHTTPrelativePath = NULL;
 }
 
-/*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_034: [Otherwise, IoTHubTransportHttp_Create shall create an immutable string (further called "message HTTP relative path") from the following pieces: "/devices/" + URL_ENCODED(config->upperConfig->deviceId) + "/messages/devicebound?api-version=2015-08-15-preview".]*/
+/*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_034: [Otherwise, IoTHubTransportHttp_Create shall create an immutable string (further called "message HTTP relative path") from the following pieces: "/devices/" + URL_ENCODED(config->upperConfig->deviceId) + "/messages/devicebound?api-version=2016-02-03".]*/
 static bool create_messageHTTPrelativePath(HTTPTRANSPORT_HANDLE_DATA* handleData, const IOTHUBTRANSPORT_CONFIG* config)
 {
     bool result;
@@ -167,7 +179,8 @@ static void destroy_eventHTTPrequestHeaders(HTTPTRANSPORT_HANDLE_DATA* handleDat
 "Authorization":" "
 "Content-Type":"application/vnd.microsoft.iothub.json"
 "Accept":"application/json"
-"Connection":"Keep-Alive"]*/
+"Connection":"Keep-Alive"
+"User-Agent":"iothubclient1.0.0]*/
 static bool create_eventHTTPrequestHeaders(HTTPTRANSPORT_HANDLE_DATA* handleData, const IOTHUBTRANSPORT_CONFIG* config)
 {
     bool result;
@@ -202,7 +215,8 @@ static bool create_eventHTTPrequestHeaders(HTTPTRANSPORT_HANDLE_DATA* handleData
                     (HTTPHeaders_AddHeaderNameValuePair(handleData->eventHTTPrequestHeaders, "iothub-to", STRING_c_str(temp)) == HTTP_HEADERS_OK) &&
                     (HTTPHeaders_AddHeaderNameValuePair(handleData->eventHTTPrequestHeaders, "Authorization", " ") == HTTP_HEADERS_OK) &&
                     (HTTPHeaders_AddHeaderNameValuePair(handleData->eventHTTPrequestHeaders, "Accept", "application/json") == HTTP_HEADERS_OK) &&
-                    (HTTPHeaders_AddHeaderNameValuePair(handleData->eventHTTPrequestHeaders, "Connection", "Keep-Alive") == HTTP_HEADERS_OK)
+                    (HTTPHeaders_AddHeaderNameValuePair(handleData->eventHTTPrequestHeaders, "Connection", "Keep-Alive") == HTTP_HEADERS_OK) &&
+                    (HTTPHeaders_AddHeaderNameValuePair(handleData->eventHTTPrequestHeaders, "User-Agent", CLIENT_DEVICE_TYPE_PREFIX CLIENT_DEVICE_BACKSLASH IOTHUB_SDK_VERSION) == HTTP_HEADERS_OK)
                     ))
                 {
                     result = false;
@@ -467,7 +481,7 @@ TRANSPORT_HANDLE IoTHubTransportHttp_Create(const IOTHUBTRANSPORT_CONFIG* config
     }
     else
     {
-        /*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_003: [Otherwise IoTHubTransportHttp_Create shall create an immutable string (further called "event HTTP relative path") from the following pieces: "/devices/" + URL_ENCODED(config->upperConfig->deviceId) + "/messages/events?api-version=2015-08-15-preview".]*/
+        /*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_003: [Otherwise IoTHubTransportHttp_Create shall create an immutable string (further called "event HTTP relative path") from the following pieces: "/devices/" + URL_ENCODED(config->upperConfig->deviceId) + "/messages/events?api-version=2016-02-03".]*/
         result = (HTTPTRANSPORT_HANDLE_DATA*)malloc(sizeof(HTTPTRANSPORT_HANDLE_DATA));
         if (result == NULL)
         {
@@ -817,9 +831,9 @@ static MAKE_PAYLOAD_RESULT makePayload(HTTPTRANSPORT_HANDLE_DATA* handleData, ST
     {
         bool isFirst = true;
         PDLIST_ENTRY actual;
+        bool keepGoing = true; /*keepGoing gets sometimes to false from within the loop*/
         /*either all the items enter the list or only some*/
         result = MAKE_PAYLOAD_OK; /*optimistically initializing it*/
-        bool keepGoing = true; /*keepGoing gets sometimes to false from within the loop*/
         while (keepGoing && ((actual = handleData->waitingToSend->Flink) != handleData->waitingToSend))
         {
             size_t messageSize;
@@ -1105,6 +1119,9 @@ static void DoEvent(TRANSPORT_HANDLE handle, IOTHUB_CLIENT_LL_HANDLE iotHubClien
                             {
                                 size_t i;
                                 bool goOn = true;
+                                const char* msgId;
+                                const char* corrId;
+                                
                                 for (i = 0; (i < count) && goOn; i++)
                                 {
                                     /*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_123: [Every property name shall add  to the message size the length of the property name + the length of the property value + 16 bytes.] */
@@ -1149,7 +1166,7 @@ static void DoEvent(TRANSPORT_HANDLE handle, IOTHUB_CLIENT_LL_HANDLE iotHubClien
                                 }
 
                                 // Add the Message Id and the Correlation Id
-                                const char* msgId = IoTHubMessage_GetMessageId(message->messageHandle);
+                                msgId = IoTHubMessage_GetMessageId(message->messageHandle);
                                 if (goOn && msgId != NULL)
                                 {
                                     if (HTTPHeaders_ReplaceHeaderNameValuePair(clonedEventHTTPrequestHeaders, IOTHUB_MESSAGE_ID, msgId) != HTTP_HEADERS_OK)
@@ -1159,7 +1176,7 @@ static void DoEvent(TRANSPORT_HANDLE handle, IOTHUB_CLIENT_LL_HANDLE iotHubClien
                                     }
                                 }
 
-                                const char* corrId = IoTHubMessage_GetCorrelationId(message->messageHandle);
+                                corrId = IoTHubMessage_GetCorrelationId(message->messageHandle);
                                 if (goOn && corrId != NULL)
                                 {
                                     if (HTTPHeaders_ReplaceHeaderNameValuePair(clonedEventHTTPrequestHeaders, IOTHUB_CORRELATION_ID, corrId) != HTTP_HEADERS_OK)
@@ -1244,7 +1261,7 @@ static void abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, const 
 {
     /*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_050: [_DoWork shall call HTTPAPIEX_SAS_ExecuteRequest with the following parameters:
 -requestType: POST
--relativePath: abandon relative path begin (as created by _Create) + value of ETag + "/abandon?api-version=2015-08-15-preview" 
+-relativePath: abandon relative path begin (as created by _Create) + value of ETag + "/abandon?api-version=2016-02-03" 
 - requestHttpHeadersHandle: an HTTP headers instance containing the following
     Authorization: " "
     If-Match: value of ETag
@@ -1254,7 +1271,7 @@ static void abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, const 
 - responseContent: NULL]*/
     /*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_051: [_DoWork shall call HTTPAPIEX_SAS_ExecuteRequest with the following parameters:
 -requestType: DELETE
--relativePath: abandon relative path begin + value of ETag + "?api-version=2015-08-15-preview" 
+-relativePath: abandon relative path begin + value of ETag + "?api-version=2016-02-03" 
 - requestHttpHeadersHandle: an HTTP headers instance containing the following
     Authorization: " "
     If-Match: value of ETag
@@ -1264,7 +1281,7 @@ static void abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, const 
 - responseContent: NULL]*/
     /*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_077: [_DoWork shall call HTTPAPIEX_SAS_ExecuteRequest with the following parameters:
 -requestType: DELETE
--relativePath: abandon relative path begin + value of ETag +"?api-version=2015-08-15-preview" + "&reject"
+-relativePath: abandon relative path begin + value of ETag +"?api-version=2016-02-03" + "&reject"
 - requestHttpHeadersHandle: an HTTP headers instance containing the following
     Authorization: " "
     If-Match: value of ETag
@@ -1332,7 +1349,7 @@ static void abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, const 
                             handleData->sasObject,
                             handleData->httpApiExHandle,
                             (action == ABANDON) ? HTTPAPI_REQUEST_POST : HTTPAPI_REQUEST_DELETE,                               /*-requestType: POST                                                                                                       */
-                            STRING_c_str(fullAbandonRelativePath),              /*-relativePath: abandon relative path begin (as created by _Create) + value of ETag + "/abandon?api-version=2015-08-15-preview"   */
+                            STRING_c_str(fullAbandonRelativePath),              /*-relativePath: abandon relative path begin (as created by _Create) + value of ETag + "/abandon?api-version=2016-02-03"   */
                             abandonRequestHttpHeaders,                          /*- requestHttpHeadersHandle: an HTTP headers instance containing the following                                            */
                             NULL,                                               /*- requestContent: NULL                                                                                                   */
                             &statusCode,                                         /*- statusCode: a pointer to unsigned int which might be examined for logging                                              */

@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 
-typedef void* HTTPAPIEX_SAS_HANDLE;
+typedef struct HTTPAPIEX_SAS_STATE_TAG* HTTPAPIEX_SAS_HANDLE;
 
 extern HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE uriResource, STRING_HANDLE keyName);
 

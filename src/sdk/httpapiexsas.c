@@ -8,7 +8,9 @@
 #include "gballoc.h"
 
 #include <stddef.h>
+#include <time.h>
 
+#include "agenttime.h"
 #include "strings.h"
 #include "buffer_.h"
 #include "sastoken.h"

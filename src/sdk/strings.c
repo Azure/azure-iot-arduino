@@ -80,7 +80,7 @@ STRING_HANDLE STRING_clone(STRING_HANDLE handle)
             /*not much to do, result is NULL from malloc*/
         }
     }
-    return result;
+    return (STRING_HANDLE)result;
 }
 
 /* Codes_SRS_STRING_07_003: [STRING_construct shall allocate a new string with the value of the specified const char*.] */
@@ -281,7 +281,7 @@ STRING_HANDLE STRING_new_JSON(const char* source)
         }
 
     }
-    return result;
+    return (STRING_HANDLE)result;
 }
 
 /*this function will concatenate to the string s1 the string s2, resulting in s1+s2*/

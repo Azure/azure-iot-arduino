@@ -24,7 +24,7 @@ extern "C" {
 #include <stddef.h>
 #endif
 
-typedef void* HTTP_HANDLE;
+typedef struct HTTP_HANDLE_DATA_TAG* HTTP_HANDLE;
 
 #define AMBIGUOUS_STATUS_CODE           (300)
 

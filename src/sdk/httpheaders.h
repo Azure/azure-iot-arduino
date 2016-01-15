@@ -41,7 +41,7 @@ HTTP_HEADERS_ERROR                \
 /** @brief Enumeration specifying the status of calls to various APIs in this module.
 */
 DEFINE_ENUM(HTTP_HEADERS_RESULT, HTTP_HEADERS_RESULT_VALUES);
-typedef void* HTTP_HEADERS_HANDLE;
+typedef struct HTTP_HEADERS_HANDLE_DATA_TAG* HTTP_HEADERS_HANDLE;
 
 /**
  * @brief	Produces a @c HTTP_HANDLE that can later be used in subsequent calls to the module.

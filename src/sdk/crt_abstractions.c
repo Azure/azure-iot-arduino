@@ -213,7 +213,7 @@ int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ...)
 #else
         /*not Microsoft compiler... */
 #if defined __STDC_VERSION__
-#if ((__STDC_VERSION__  == 199901L) || ( __STDC_VERSION__ == 201112L))
+#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
         /*C99 compiler*/
         va_list args;
         va_start(args, format);

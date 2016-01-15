@@ -5,7 +5,6 @@
 #define SASTOKEN_H
 
 #include "strings.h"
-#include "buffer_.h"
 
 #ifdef __cplusplus
 extern "C" {
