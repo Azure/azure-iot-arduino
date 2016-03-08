@@ -1,10 +1,10 @@
 # AzureIoT - Azure IoT Hub library for Arduino
 
-This library is a port of the [Microsoft Azure IoT device SDK for C](https://github.com/Azure/azure-iot-sdks/blob/master/c/readme.md) to Arduino. It allows you to use your Arduino/Genuino with the [Azure IoT Hub](https://azure.microsoft.com/en-us/services/iot-hub/).
+This library is a port of the [Microsoft Azure IoT device SDK for C](https://github.com/Azure/azure-iot-sdks/blob/master/c/readme.md) to Arduino. It allows you to use several Arduino compatible boards with Azure IoT Hub.
 
-Currently the library has been ported to ESP8266 and SAMD based boards:
+Currently supported hardware:
 - Atmel SAMD Based boards
-  - Arduino/Genuino [MKR1000](https://www.arduino.cc/en/Main/ArduinoMKR1000) (untested)
+  - Arduino/Genuino [MKR1000](https://www.arduino.cc/en/Main/ArduinoMKR1000) (pending release)
   - Adafruit [Feather M0](https://www.adafruit.com/products/3010)
   - [Zero](https://www.arduino.cc/en/Main/ArduinoBoardZero) and [WiFi Shield 101](https://www.arduino.cc/en/Main/ArduinoWiFiShield101) 
 - ESP8266 based boards with [esp8266/arduino](https://github.com/esp8266/arduino)
@@ -13,33 +13,63 @@ Currently the library has been ported to ESP8266 and SAMD based boards:
 
 [![Microsoft Azure Certified][Microsoft-Azure-Certified-Badge]][azure-certifiedforiot]
 
-## Getting started with MKR1000 or Zero
+## Prerequisites
 
-See the [Microsoft Azure IoT device SDK for C - Arduino WiFi Shield 101 and MKR1000 Setup Guide](https://github.com/Azure/azure-iot-sdks/blob/master/c/doc/run_sample_on_arduino_wifi101.md).
+You should have the following ready before beginning with any board:
+-   [Setup your IoT hub](https://github.com/Azure/azure-iot-sdks/blob/master/doc/setup_iothub.md)
+-   [Provision your device and get its credentials](https://github.com/Azure/azure-iot-sdks/blob/master/doc/manage_iot_hub.md)
+-   [Arduino IDE 1.6.8](https://www.arduino.cc/en/Main/Software) (currently this is available only as the hourly build)
+-  Install the AzureIoT library
+    * Currently this must be installed from source control by cloning the repo into your arduino libraries folder.  An example is below:
 
-## Getting started with ESP8266
+        ```
+        cd C:\Program Files (x86)\Arduino\libraries
+        git clone <the URI for this repository>
+        ```
+Then reference the section appropriate for your hardware below.
 
-- Use Arduino IDE 1.6.8 or later (or [current hourly](https://www.arduino.cc/en/Main/Software) if not yet released).
+## ESP8266
+##### Sparkfun Thing, Adafruit Feather Huzzah, or generic ESP8266 board
 
-- Install esp8266 board support from staging or from source at [esp8266/arduino](https://github.com/esp8266/arduino).
+1. Install esp8266 board support into your Arduino IDE.
+    * Start Arduino and open Preferences window.
+    * Enter `http://arduino.esp8266.com/stable/package_esp8266com_index.json` into Additional Board Manager URLs field. You can add multiple URLs, separating them with commas.
+    * Open Boards Manager from Tools > Board menu and install esp8266 platform 2.1.0 or later 
+    * Select your ESP8266 board from Tools > Board menu after installation
+    
+2. Copy and reference the sample provided in library directory 
+    ```
+    \examples\esp8266\simplesample_http\simplesample_http.ino
+    ```
+3. Update Wifi SSID/Password in simplesample_http.ino 
+    * Ensure you are using a wifi network that does not require additional manual steps after connection, such as opening a web browser.
+4. Update IoT Hub Connection string in simplesample_http.c
 
-- Install this library from the Arduino IDE library manage, or from source:
 
-```
-cd C:\Program Files (x86)\Arduino\libraries
-git clone <repo url for this source>
-```
-- Open sample provided in library directory 
-```
-\examples\esp8266\AzureIoTTest.ino
-```
-- Update Wifi SSID/Password in AzureIoTTest.ino
-- Update Connection string in simplesample_http.c
+## Adafruit Feather M0
+1. Install Feather M0 board support into your Arduino IDE.
+    * Start Arduino and open Preferences window.
+    * Enter `https://adafruit.github.io/arduino-board-index/package_adafruit_index.json` into Additional Board Manager URLs field. You can add multiple URLs, separating them with commas.
+    * Open Boards Manager from Tools > Board menu and install Adafruit SAMD Boards 1.0.7 or later.
+    * Select your Adafruit Feather M0 from Tools > Board menu after installation
 
-## ESP8266 Tips
-There is very little ram left available after the ESP SDK, SSL and Azure SDK.  Every effort must be made to store strings and data on flash rather than RAM.
+2. Copy and reference the sample folder provided in library directory 
+    ```
+    \examples\samd\simplesample_http\simplesample_http.ino
+    ```
+3. Update Wifi SSID/Password in simplesample_http.ino 
+    * Ensure you are using a wifi network that does not require additional manual steps after connection, such as opening a web browser.
+4. Update IoT Hub Connection string in simplesample_http.c
 
-There is no floating point printf support - you must use integer data types in your messages.
+## MKR1000 or Zero + Wifi101
+##### These boards have had limited testing in this release.
+1. Copy and reference the sample folder provided in library directory 
+    ```
+    \examples\samd\simplesample_http\simplesample_http.ino
+    ```
+2. Update Wifi SSID/Password in simplesample_http.ino 
+    * Ensure you are using a wifi network that does not require additional manual steps after connection, such as opening a web browser.
+3. Update IoT Hub Connection string in simplesample_http.c
 
 ## License
 
