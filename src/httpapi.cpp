@@ -7,16 +7,10 @@
 #include "sdk/httpapi.h"
 #include "iot_logging.h"
 
-#if defined(ARDUINO_ARCH_ESP8266)
-#include "esp8266/util/HTTPSClient.h"
-#elif defined(ARDUINO_ARCH_SAMD)
-#if defined(ARDUINO_SAMD_FEATHER_M0)
-#include "samd/featherm0/util/HTTPSClient.h"
-#include "samd/featherm0/util/NTPClient.h"
-#else
-#include "samd/util/HTTPSClient.h"
+#include "util/HTTPSClient.h"
+
+#if defined(ARDUINO_ARCH_SAMD)
 #include "samd/util/NTPClient.h"
-#endif
 #endif
 
 #define POOL_SIZE 1
