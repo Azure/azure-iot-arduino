@@ -1,11 +1,8 @@
 // Copyright (c) Arduino. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #if defined(ARDUINO_ARCH_SAMD)
-#if defined(ARDUINO_SAMD_FEATHER_M0)
-#include "../featherm0/util/NTPClient.h"
-#else
 #include "NTPClient.h"
-#endif
 
 #define LOCAL_UDP_PORT 2390
 
