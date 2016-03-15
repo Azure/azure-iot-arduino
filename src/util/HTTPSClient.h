@@ -2,6 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+#ifndef HTTPSCLIENT_H
+#define HTTPSCLIENT_H
+
 #ifdef ARDUINO_SAMD_FEATHER_M0
 #include <Adafruit_WINC1500SSLClient.h>
 #elif defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000)
@@ -10,15 +13,12 @@
 #include <WiFiClientSecure.h>
 #endif
 
-#ifndef HTTPSCLIENT_H
-#define HTTPSCLIENT_H
-
 #define HTTPS_PORT          443
 
 #ifdef ARDUINO_SAMD_FEATHER_M0
 class HTTPSClient : public Adafruit_WINC1500SSLClient
 #elif defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000)
-class HTTPSClient : public WifiSSLClient
+class HTTPSClient : public WiFiSSLClient
 #elif defined(ESP8266)
 class HTTPSClient : public WiFiClientSecure
 #endif
