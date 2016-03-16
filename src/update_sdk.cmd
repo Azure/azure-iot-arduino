@@ -10,15 +10,7 @@ mkdir "%~dp0\sdk"
 
 cd /D "%~dp0\temp"
 
-git clone -b develop https://github.com/Azure/azure-iot-sdks.git --recursive
-
-cd "%~dp0\temp\azure-iot-sdks\"
-
-git checkout develop
-
-git reset --hard HEAD
-
-git pull origin develop
+git clone https://github.com/Azure/azure-iot-sdks.git --recursive
 
 cd "%~dp0\temp"
 
