@@ -14,6 +14,9 @@
 #endif
 
 #include "simplesample_http.h"
+#include "NTPClient.h"
+#include <time.h>
+#include <sys/time.h>
 
 #ifdef ARDUINO_SAMD_FEATHER_M0
 // Define the WINC1500 board connections below.
@@ -38,39 +41,83 @@ char pass[] = "";    // your network password (use for WPA, or use as key for WE
 int status = WL_IDLE_STATUS;
 
 void setup() {
-#ifdef WINC_EN
-  pinMode(WINC_EN, OUTPUT);
-  digitalWrite(WINC_EN, HIGH);
-#endif
-  Serial.begin(9600);
+    initSerial();
+    initWifi();
+    initTime();
+}
 
-  while(!Serial) {
-    ;
-  }
+void initSerial() {
+    Serial.begin(9600);
 
-  // check for the presence of the shield :
-  if (WiFi.status() == WL_NO_SHIELD) {
-    Serial.println("WiFi shield not present");
-    // don't continue:
-    while (true);
-  }
-
-  // attempt to connect to Wifi network:
-  while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to SSID: ");
-    Serial.println(ssid);
-    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-    status = WiFi.begin(ssid, pass);
-
-    if (status != WL_CONNECTED) {
-      // wait 10 seconds for connection:
-      delay(10000);
+    while(!Serial) {
+        ;
     }
-  }
-  Serial.println("Connected to wifi");
+}
+
+void initWifi() {
+#ifdef WINC_EN
+    pinMode(WINC_EN, OUTPUT);
+    digitalWrite(WINC_EN, HIGH);
+#endif
+
+    // check for the presence of the shield :
+    if (WiFi.status() == WL_NO_SHIELD) {
+        Serial.println("WiFi shield not present");
+        // don't continue:
+        while (true);
+    }
+
+    // attempt to connect to Wifi network:
+    while (status != WL_CONNECTED) {
+        Serial.print("Attempting to connect to SSID: ");
+        Serial.println(ssid);
+        // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
+        status = WiFi.begin(ssid, pass);
+
+        if (status != WL_CONNECTED) {
+            // wait 10 seconds for connection:
+            delay(10000);
+        }
+    }
+    Serial.println("Connected to wifi");
+}
+
+void initTime() {
+#ifdef ARDUINO_SAMD_FEATHER_M0
+    Adafruit_WINC1500UDP     _udp;
+#elif defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000)
+    WiFiUDP     _udp;
+#endif
+
+    time_t epochTime = (time_t)-1;
+
+    NTPClient ntpClient;
+    ntpClient.begin();
+
+    while (true) {
+        epochTime = ntpClient.getEpochTime("0.pool.ntp.org");
+
+        if (epochTime == (time_t)-1) {
+            Serial.println("Fetching NTP epoch time failed! Waiting 5 seconds to retry.");
+            delay(5000);
+        } else {
+            Serial.print("Fetched NTP epoch time is: ");
+            Serial.println(epochTime);
+            break;
+        }
+    }
+    ntpClient.end();
+
+
+    struct timeval tv;
+    tv.tv_sec = epochTime;
+    tv.tv_usec = 0;
+
+    settimeofday(&tv, NULL);
+
 }
 
 void loop() {
-  simplesample_http_run();
+    simplesample_http_run();
 }
 
