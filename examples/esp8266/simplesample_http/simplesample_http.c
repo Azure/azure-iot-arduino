@@ -12,18 +12,7 @@ That does not mean that HTTP only works with the _LL APIs.
 Simply changing the using the convenience layer (functions not having _LL)
 and removing calls to _DoWork will yield the same results. */
 
-#ifdef ARDUINO
 #include "AzureIoT.h"
-#else
-#include "serializer.h"
-#include "iothub_client_ll.h"
-#include "iothubtransporthttp.h"
-#include "threadapi.h"
-#endif
-
-#ifdef MBED_BUILD_TIMESTAMP
-#include "certs.h"
-#endif // MBED_BUILD_TIMESTAMP
 
 static const char* connectionString = "HostName=[host].azure-devices.net;DeviceId=[device];SharedAccessKey=[key]";
 
@@ -78,17 +67,17 @@ static void sendMessage(IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle, const unsign
     IOTHUB_MESSAGE_HANDLE messageHandle = IoTHubMessage_CreateFromByteArray(buffer, size);
     if (messageHandle == NULL)
     {
-        printf(PSTR("unable to create a new IoTHubMessage\r\n"));
+        LogInfo("unable to create a new IoTHubMessage\r\n");
     }
     else
     {
         if (IoTHubClient_LL_SendEventAsync(iotHubClientHandle, messageHandle, sendCallback, (void*)(uintptr_t)messageTrackingId) != IOTHUB_CLIENT_OK)
         {
-            printf(PSTR("failed to hand over the message to IoTHubClient"));
+            LogInfo("failed to hand over the message to IoTHubClient");
         }
         else
         {
-            printf(PSTR("IoTHubClient accepted the message for delivery\r\n"));
+            LogInfo("IoTHubClient accepted the message for delivery\r\n");
         }
         IoTHubMessage_Destroy(messageHandle);
     }
@@ -104,7 +93,7 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT IoTHubMessage(IOTHUB_MESSAGE_HANDLE mess
     size_t size;
     if (IoTHubMessage_GetByteArray(message, &buffer, &size) != IOTHUB_MESSAGE_OK)
     {
-        printf(PSTR("unable to IoTHubMessage_GetByteArray\r\n"));
+        LogInfo("unable to IoTHubMessage_GetByteArray\r\n");
         result = EXECUTE_COMMAND_ERROR;
     }
     else
@@ -113,7 +102,7 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT IoTHubMessage(IOTHUB_MESSAGE_HANDLE mess
         char* temp = malloc(size + 1);
         if (temp == NULL)
         {
-            printf(PSTR("failed to malloc\r\n"));
+            LogInfo("failed to malloc\r\n");
             result = EXECUTE_COMMAND_ERROR;
         }
         else
@@ -152,7 +141,7 @@ void simplesample_http_run(void)
             unsigned int minimumPollingTime = 9; /*because it can poll "after 9 seconds" polls will happen effectively at ~10 seconds*/
             if (IoTHubClient_LL_SetOption(iotHubClientHandle, "MinimumPollingTime", &minimumPollingTime) != IOTHUB_CLIENT_OK)
             {
-                printf(PSTR("failure to set option \"MinimumPollingTime\"\r\n"));
+                LogInfo("failure to set option \"MinimumPollingTime\"\r\n");
             }
 
 #ifdef MBED_BUILD_TIMESTAMP
@@ -172,7 +161,7 @@ void simplesample_http_run(void)
             {
                 if (IoTHubClient_LL_SetMessageCallback(iotHubClientHandle, IoTHubMessage, myWeather) != IOTHUB_CLIENT_OK)
                 {
-                    printf(PSTR("unable to IoTHubClient_SetMessageCallback\r\n"));
+                    LogInfo("unable to IoTHubClient_SetMessageCallback\r\n");
                 }
                 else
                 {
@@ -190,17 +179,17 @@ void simplesample_http_run(void)
                             IOTHUB_MESSAGE_HANDLE messageHandle = IoTHubMessage_CreateFromByteArray(destination, destinationSize);
                             if (messageHandle == NULL)
                             {
-                                printf(PSTR("unable to create a new IoTHubMessage\r\n"));
+                                LogInfo("unable to create a new IoTHubMessage\r\n");
                             }
                             else
                             {
                                 if (IoTHubClient_LL_SendEventAsync(iotHubClientHandle, messageHandle, sendCallback, (void*)1) != IOTHUB_CLIENT_OK)
                                 {
-                                    printf(PSTR("failed to hand over the message to IoTHubClient"));
+                                    LogInfo("failed to hand over the message to IoTHubClient\r\n");
                                 }
                                 else
                                 {
-                                    printf(PSTR("IoTHubClient accepted the message for delivery\r\n"));
+                                    LogInfo("IoTHubClient accepted the message for delivery\r\n");
                                 }
 
                                 IoTHubMessage_Destroy(messageHandle);

@@ -10,10 +10,36 @@ in a later revision.
 */
 
 #if defined(ARDUINO_ARCH_ESP8266)
-#include <pgmspace.h>
-#define LogUsage(FORMAT, ...) (void)os_printf(PSTR(FORMAT), ##__VA_ARGS__);
-#define LogInfo(FORMAT, ...) (void)os_printf(PSTR(FORMAT), ##__VA_ARGS__);
-#define LogError(FORMAT, ...) (void)os_printf(PSTR(FORMAT), ##__VA_ARGS__);
+#include "esp8266/azcpgmspace.h"
+#define LogUsage(FORMAT, ...) { \
+        const char* __localFORMAT = PSTR(FORMAT); \
+        size_t __localFORMATSIZE = az_c_strlen_P(__localFORMAT) + 1; \
+        char* __localREALSTR = (char*)malloc(__localFORMATSIZE * sizeof(char)); \
+        __localREALSTR[__localFORMATSIZE-1] = '\0'; \
+        az_c_strncpy_P(__localREALSTR, __localFORMAT, __localFORMATSIZE); \
+        os_printf(__localREALSTR, ##__VA_ARGS__); \
+        free(__localREALSTR); \
+}
+#define LogInfo(FORMAT, ...) { \
+        const char* __localFORMAT = PSTR(FORMAT); \
+        size_t __localFORMATSIZE = az_c_strlen_P(__localFORMAT) + 1; \
+        char* __localREALSTR = (char*)malloc(__localFORMATSIZE * sizeof(char)); \
+        __localREALSTR[__localFORMATSIZE-1] = '\0'; \
+        az_c_strncpy_P(__localREALSTR, __localFORMAT, __localFORMATSIZE); \
+        os_printf(__localREALSTR, ##__VA_ARGS__); \
+        free(__localREALSTR); \
+}
+
+#define LogError(FORMAT, ...) { \
+        const char* __localFORMAT = PSTR(FORMAT); \
+        size_t __localFORMATSIZE = az_c_strlen_P(__localFORMAT) + 1; \
+        char* __localREALSTR = (char*)malloc(__localFORMATSIZE * sizeof(char)); \
+        __localREALSTR[__localFORMATSIZE-1] = '\0'; \
+        az_c_strncpy_P(__localREALSTR, __localFORMAT, __localFORMATSIZE); \
+        os_printf(__localREALSTR, ##__VA_ARGS__); \
+        free(__localREALSTR); \
+}
+
 #elif defined(ARDUINO_ARCH_SAMD)
 #define LogUsage (void)printf
 #define LogInfo(...) (void)printf("Info: " __VA_ARGS__)

@@ -79,6 +79,7 @@ void initWifi() {
             delay(10000);
         }
     }
+    
     Serial.println("Connected to wifi");
 }
 
@@ -106,8 +107,8 @@ void initTime() {
             break;
         }
     }
+    
     ntpClient.end();
-
 
     struct timeval tv;
     tv.tv_sec = epochTime;
