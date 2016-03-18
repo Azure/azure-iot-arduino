@@ -1,4 +1,4 @@
-// Please use an Arduino IDE 1.6.8 (once released)
+// Please use an Arduino IDE 1.6.8 or greater
 
 #include <ESP8266WiFi.h>
 #include <time.h>
@@ -21,9 +21,9 @@ void loop() {
 }
 
 void initSerial() {
-	// Start serial and initialize stdout
+    // Start serial and initialize stdout
     Serial.begin(115200);
-	Serial.setDebugOutput(true);
+    Serial.setDebugOutput(true);
 }
 
 void initWifi() {

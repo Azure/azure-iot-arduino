@@ -7,8 +7,9 @@
 *	@details These fucntions are just wrappers around existing ones in pgmspace.h that
 *    are not defined in a way to make them linkable from c libs.
 */
-#ifndef _CPGMSPACE_H
-#define _CPGMSPACE_H
+#if defined(ARDUINO_ARCH_ESP8266)
+#ifndef _AZCPGMSPACE_H
+#define _AZCPGMSPACE_H
 
 #include <pgmspace.h>
 
@@ -21,4 +22,6 @@ size_t az_c_strlen_P(PGM_P s);
 }
 #endif
 
-#endif
+#endif // _AZCPGMSPACE_H
+
+#endif // #if defined(ARDUINO_ARCH_ESP8266)
