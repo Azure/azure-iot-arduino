@@ -12,7 +12,13 @@ cd /D "%~dp0\temp"
 
 git clone https://github.com/Azure/azure-iot-sdks.git --recursive
 
+cd azure-iot-sdks
+echo Upstream HEAD @ > metadata.txt
+git rev-parse HEAD >> metadata.txt
+
 cd "%~dp0\temp"
+
+copy "%~dp0\temp\azure-iot-sdks\metadata.txt" "%~dp0\sdk"
 
 copy "%~dp0\temp\azure-iot-sdks\c\iothub_client\src\" "%~dp0\sdk"
 copy "%~dp0\temp\azure-iot-sdks\c\iothub_client\inc\" "%~dp0\sdk"
