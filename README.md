@@ -1,12 +1,12 @@
-# AzureIoT - Azure IoT Hub library for Arduino
+# AzureIoTHub - Azure IoT Hub library for Arduino
 
 This library is a port of the [Microsoft Azure IoT device SDK for C](https://github.com/Azure/azure-iot-sdks/blob/master/c/readme.md) to Arduino. It allows you to use several Arduino compatible boards with Azure IoT Hub.
 
 Currently supported hardware:
 - Atmel SAMD Based boards
   - Arduino/Genuino [MKR1000](https://www.arduino.cc/en/Main/ArduinoMKR1000)
-  - Adafruit [Feather M0](https://www.adafruit.com/products/3010)
   - Arduino/Genuino [Zero](https://www.arduino.cc/en/Main/ArduinoBoardZero) and [WiFi Shield 101](https://www.arduino.cc/en/Main/ArduinoWiFiShield101) 
+  - Adafruit [Feather M0](https://www.adafruit.com/products/3010)
 - ESP8266 based boards with [esp8266/arduino](https://github.com/esp8266/arduino)
   - SparkFun [Thing](https://www.sparkfun.com/products/13711)
   - Adafruit [Feather Huzzah](https://www.adafruit.com/products/2821)
@@ -20,6 +20,12 @@ You should have the following ready before beginning with any board:
 -   [Provision your device and get its credentials](https://github.com/Azure/azure-iot-sdks/blob/master/doc/manage_iot_hub.md)
 -   [Arduino IDE 1.6.8](https://www.arduino.cc/en/Main/Software)
 -   Install the `AzureIoTHub` library via the Arduino IDE Library Manager
+
+## MKR1000 or Zero + Wifi101
+1. Open the AzureIoTHub SAMD sample from the Arduino IDE File->Examples menu.
+2. Update Wifi SSID/Password in simplesample_http.ino 
+    * Ensure you are using a wifi network that does not require additional manual steps after connection, such as opening a web browser.
+3. Update IoT Hub Connection string in simplesample_http.c
 
 ## ESP8266
 ##### Sparkfun Thing, Adafruit Feather Huzzah, or generic ESP8266 board
@@ -48,12 +54,6 @@ You should have the following ready before beginning with any board:
 3. Update Wifi SSID/Password in simplesample_http.ino 
     * Ensure you are using a wifi network that does not require additional manual steps after connection, such as opening a web browser.
 4. Update IoT Hub Connection string in simplesample_http.c
-
-## MKR1000 or Zero + Wifi101
-1. Open the AzureIoTHub SAMD sample from the Arduino IDE File->Examples menu.
-2. Update Wifi SSID/Password in simplesample_http.ino 
-    * Ensure you are using a wifi network that does not require additional manual steps after connection, such as opening a web browser.
-3. Update IoT Hub Connection string in simplesample_http.c
 
 ## License
 
