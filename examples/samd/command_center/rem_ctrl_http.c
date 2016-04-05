@@ -8,7 +8,7 @@
 #include <time.h>
 
 #ifdef ARDUINO
-#include "AzureIoT.h"
+#include "AzureIoTHub.h"
 #else
 #include "serializer.h"
 #include "iothub_client_ll.h"
