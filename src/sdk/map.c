@@ -9,6 +9,7 @@
 
 #include "map.h"
 #include "iot_logging.h"
+#include "strings.h"
 
 DEFINE_ENUM_STRINGS(MAP_RESULT, MAP_RESULT_VALUES);
 
@@ -35,7 +36,7 @@ MAP_HANDLE Map_Create(MAP_FILTER_CALLBACK mapFilterFunc)
         result->count = 0;
         result->mapFilterCallback = mapFilterFunc;
     }
-    return result;
+    return (MAP_HANDLE)result;
 }
 
 void Map_Destroy(MAP_HANDLE handle)
@@ -157,7 +158,7 @@ MAP_HANDLE Map_Clone(MAP_HANDLE handle)
             }
         }
     }
-    return result;
+    return (MAP_HANDLE)result;
 }
 
 static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
@@ -222,6 +223,7 @@ static void Map_DecreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
     else
     {
         /*certainly > 1...*/
+        char** undoneValues;
         char** undoneKeys = (char**)realloc(handleData->keys, sizeof(char*)* (handleData->count - 1)); 
         if (undoneKeys == NULL)
         {
@@ -232,7 +234,7 @@ static void Map_DecreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
             handleData->keys = undoneKeys;
         }
 
-        char** undoneValues = (char**)realloc(handleData->values, sizeof(char*)* (handleData->count - 1));
+        undoneValues = (char**)realloc(handleData->values, sizeof(char*)* (handleData->count - 1));
         if (undoneValues == NULL)
         {
             LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size\r\n");
@@ -583,4 +585,96 @@ MAP_RESULT Map_GetInternals(MAP_HANDLE handle, const char*const** keys, const ch
         result = MAP_OK;
     }
     return result;
+}
+
+STRING_HANDLE Map_ToJSON(MAP_HANDLE handle)
+{
+    STRING_HANDLE result;
+    /*Codes_SRS_MAP_02_052: [If parameter handle is NULL then Map_ToJSON shall return NULL.] */
+    if (handle == NULL)
+    {
+        result = NULL;
+        LogError("invalid arg (NULL)");
+    }
+    else
+    {
+        /*Codes_SRS_MAP_02_048: [Map_ToJSON shall produce a STRING_HANDLE representing the content of the MAP.] */
+        result = STRING_construct("{");
+        if (result == NULL)
+        {
+            LogError("STRING_construct failed");
+        }
+        else
+        {
+            size_t i;
+            MAP_HANDLE_DATA* handleData = (MAP_HANDLE_DATA *)handle;
+            /*Codes_SRS_MAP_02_049: [If the MAP is empty, then Map_ToJSON shall produce the string "{}".*/
+            bool breakFor = false; /*used to break out of for*/
+            for (i = 0; (i < handleData->count) && (!breakFor); i++)
+            {
+                /*add one entry to the JSON*/
+                /*Codes_SRS_MAP_02_050: [If the map has properties then Map_ToJSON shall produce the following string:{"name1":"value1", "name2":"value2" ...}]*/
+                STRING_HANDLE key = STRING_new_JSON(handleData->keys[i]);
+                if (key == NULL)
+                {
+                    LogError("STRING_new_JSON failed");
+                    STRING_delete(result);
+                    result = NULL;
+                    breakFor = true;
+                }
+                else
+                {
+                    STRING_HANDLE value = STRING_new_JSON(handleData->values[i]);
+                    if (value == NULL)
+                    {
+                        LogError("STRING_new_JSON failed");
+                        STRING_delete(result);
+                        result = NULL;
+                        breakFor = true;
+                    }
+                    else
+                    {
+                        if (!(
+                            ((i>0) ? (STRING_concat(result, ",") == 0) : 1) &&
+                            (STRING_concat_with_STRING(result, key) == 0) &&
+                            (STRING_concat(result, ":") == 0) &&
+                            (STRING_concat_with_STRING(result, value) == 0)
+                            ))
+                        {
+                            LogError("failed to build the JSON");
+                            STRING_delete(result);
+                            result = NULL;
+                            breakFor = true;
+                        }
+                        else
+                        {
+                            /*all nice, go to the next element in the map*/
+                        }
+                        STRING_delete(value);
+                    }
+                    STRING_delete(key);
+                }
+            }
+                
+            if (breakFor)
+            {
+                LogError("error happened during JSON string builder");
+            }
+            else
+            {
+                if (STRING_concat(result, "}") != 0)
+                {
+                    LogError("failed to build the JSON");
+                    STRING_delete(result);
+                    result = NULL;
+                }
+                else
+                {
+                    /*return as is, JSON has been build*/
+                }
+            }
+        }
+    }
+    return result;
+
 }

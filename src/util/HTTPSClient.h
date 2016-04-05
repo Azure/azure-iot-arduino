@@ -1,15 +1,27 @@
 // Copyright (c) Arduino. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-
-#include <WiFi101.h>
-#include <WiFiUdp.h>
+//
 
 #ifndef HTTPSCLIENT_H
 #define HTTPSCLIENT_H
 
+#ifdef ARDUINO_SAMD_FEATHER_M0
+#include <Adafruit_WINC1500SSLClient.h>
+#elif defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000)
+#include <WifiSSLClient.h>
+#elif defined(ESP8266)
+#include <WiFiClientSecure.h>
+#endif
+
 #define HTTPS_PORT          443
 
+#ifdef ARDUINO_SAMD_FEATHER_M0
+class HTTPSClient : public Adafruit_WINC1500SSLClient
+#elif defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000)
 class HTTPSClient : public WiFiSSLClient
+#elif defined(ESP8266)
+class HTTPSClient : public WiFiClientSecure
+#endif
 {
     public:
         HTTPSClient();

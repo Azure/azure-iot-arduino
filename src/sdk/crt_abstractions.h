@@ -33,10 +33,26 @@ typedef bool _Bool;
 #else
 #include <stdbool.h>
 #endif
+#else 
+/* WINCE does not support bool as C datatype */
+#define __bool_true_false_are_defined	1
+
+#define HAS_STDBOOL
+
+#define _Bool bool
+
+#ifdef __cplusplus
+#define _CSTDBOOL_
+#else
+typedef unsigned char bool;
+
+#define false	0
+#define true	1
+#endif
 #endif
 #else
 #if defined __STDC_VERSION__
-#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201112L))
+#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
 /*C99 compiler or C11*/
 #define HAS_STDBOOL
 #include <stdbool.h>
@@ -88,20 +104,11 @@ extern int size_tToString(char* destination, size_t destinationSize, size_t valu
 /*else if running on C99 or C11, ISNAN shall be isnan*/
 /*else if running on C89 ... #error and inform user*/
 
-#ifdef IN_OPENWRT
-#undef isnan
-#define isnan(x) __builtin_isnan(x)
-#undef isinf
-#define isinf(x) __builtin_isinf(x)
-#undef signbit
-#define signbit(x) __builtin_signbit(x)
-#endif 
-
 #ifdef _MSC_VER
 #define ISNAN _isnan
 #else
 #if defined __STDC_VERSION__
-#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201112L))
+#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
 /*C99 compiler or C11*/
 #define ISNAN isnan
 #else
@@ -118,52 +125,11 @@ extern int size_tToString(char* destination, size_t destinationSize, size_t valu
 #endif
 #endif
 
-/*ispositiveinfinity*/
-
-#ifdef _MSC_VER
-#define ISPOSITIVEINFINITY(x) ((_finite((x))==0) && ((_fpclass((x)) & _FPCLASS_PINF) == _FPCLASS_PINF))
-#else
-#if defined __STDC_VERSION__
-#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201112L))
-/*C99 compiler or C11*/
-#define ISPOSITIVEINFINITY(x) (isinf((x)) && (signbit((x))==0))
-#else
-#error update this file to contain the latest C standard.
-#endif
-#else
-#ifdef __cplusplus 
-#define ISPOSITIVEINFINITY(x) (std::isinf((x)) && (signbit((x))==0))
-#else
-#error unknown (or C89) compiler, must provide a definition for ISPOSITIVEINFINITY
-#endif
-#endif
-#endif
-
-#ifdef _MSC_VER
-/*not exactly signbit*/
-#define ISNEGATIVEINFINITY(x) ((_finite((x))==0) && ((_fpclass((x)) & _FPCLASS_NINF) == _FPCLASS_NINF))
-#else
-#if defined __STDC_VERSION__
-#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201112L))
-/*C99 compiler or C11*/
-#define ISNEGATIVEINFINITY(x) (isinf((x)) && (signbit((x))!=0))
-#else
-#error update this file to contain the latest C standard.
-#endif
-#else
-#ifdef __cplusplus 
-#define ISNEGATIVEINFINITY(x) (std::isinf((x)) && (signbit((x)) != 0))
-#else
-#error unknown (or C89) compiler, must provide a definition for ISNEGATIVEINFINITY
-#endif
-#endif
-#endif
-
 #ifdef _MSC_VER
 #define INT64_PRINTF "%I64d"
 #else
 #if defined __STDC_VERSION__
-#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201112L))
+#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
 /*C99 compiler or C11*/
 #define INT64_PRINTF "%" PRId64 ""
 #else

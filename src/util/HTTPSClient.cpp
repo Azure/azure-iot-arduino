@@ -3,6 +3,9 @@
 
 #include "HTTPSClient.h"
 
+// Uncomment the below to see HTTP traffic in
+// your debug output.
+
 // #define DEBUG_STREAM Serial
 
 HTTPSClient::HTTPSClient() :
@@ -68,7 +71,7 @@ int HTTPSClient::sendBody(const unsigned char *content, int length)
 int HTTPSClient::readStatus()
 {
     int statusCode = -1;
-    
+
     String status = readLine();
     status.trim();
 

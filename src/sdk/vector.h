@@ -14,7 +14,7 @@ extern "C"
 #include <stddef.h>
 #endif
 
-typedef void* VECTOR_HANDLE;
+typedef struct VECTOR_TAG* VECTOR_HANDLE;
 
 typedef bool(*PREDICATE_FUNCTION)(const void* element, const void* value);
 

@@ -26,7 +26,7 @@ extern "C" {
 #include <stddef.h>
 #endif
 
-typedef void* HTTPAPIEX_HANDLE;
+typedef struct HTTPAPIEX_HANDLE_DATA_TAG* HTTPAPIEX_HANDLE;
 
 #define HTTPAPIEX_RESULT_VALUES \
     HTTPAPIEX_OK, \

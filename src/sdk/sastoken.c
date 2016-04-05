@@ -58,7 +58,7 @@ STRING_HANDLE SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_HAN
                     ((toBeHashed = STRING_new()) == NULL) ||
                     ((result = STRING_new()) == NULL))
                 {
-                    LogError("Unable to allocate memory to prepare SAS token.\r\n")
+                    LogError("Unable to allocate memory to prepare SAS token.\r\n");
                 }
                 else
                 {

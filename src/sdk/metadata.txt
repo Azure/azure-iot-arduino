@@ -1,3 +1,0 @@
-git@github.com:arduino-libraries/azure-iot-sdks.git
-arduino
-2bcecebd1ebbb0129db503c01ae15431e92a66e4

@@ -35,7 +35,7 @@ extern "C"
  */
 DEFINE_ENUM(MAP_RESULT, MAP_RESULT_VALUES);
 
-typedef void* MAP_HANDLE;
+typedef struct MAP_HANDLE_DATA_TAG* MAP_HANDLE;
 
 typedef int (*MAP_FILTER_CALLBACK)(const char* mapProperty, const char* mapValue);
 
@@ -191,6 +191,9 @@ extern const char* Map_GetValueFromKey(MAP_HANDLE handle, const char* key);
  *          successfully or an error code otherwise.
  */
 extern MAP_RESULT Map_GetInternals(MAP_HANDLE handle, const char*const** keys, const char*const** values, size_t* count);
+
+/*this API creates a JSON object from the content of the map*/
+extern STRING_HANDLE Map_ToJSON(MAP_HANDLE handle);
 
 #ifdef __cplusplus
 }

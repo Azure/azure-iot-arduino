@@ -328,6 +328,52 @@ int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
     return result;
 }
 
+int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
+{
+    int result;
+    if ((handle1 == NULL) || (handle2 == NULL) || (handle1 == handle2))
+    {
+        /* : [BUFFER_append shall return a nonzero upon any error that is encountered.] */
+        result = __LINE__;
+    }
+    else
+    {
+        BUFFER* b1 = (BUFFER*)handle1;
+        BUFFER* b2 = (BUFFER*)handle2;
+        if (b1->buffer == NULL)
+        {
+            /* : [BUFFER_append shall return a nonzero upon any error that is encountered.] */
+            result = __LINE__;
+        }
+        else if (b2->buffer == NULL)
+        {
+            /* : [BUFFER_append shall return a nonzero upon any error that is encountered.] */
+            result = __LINE__;
+        }
+        else
+        {
+            unsigned char* temp = (unsigned char*)malloc(b1->size + b2->size);
+            if (temp == NULL)
+            {
+                /* : [BUFFER_append shall return a nonzero upon any error that is encountered.] */
+                result = __LINE__;
+            }
+            else
+            {
+                // Append the BUFFER
+                memcpy(temp, b2->buffer, b2->size);
+                memcpy(&temp[b2->size], b1->buffer, b1->size);
+                free(b1->buffer);
+                b1->buffer = temp;
+                b1->size += b2->size;
+                result = 0;
+            }
+        }
+    }
+    return result;
+}
+
+
 /* Codes_SRS_BUFFER_07_025: [BUFFER_u_char shall return a pointer to the underlying unsigned char*.] */
 unsigned char* BUFFER_u_char(BUFFER_HANDLE handle)
 {
