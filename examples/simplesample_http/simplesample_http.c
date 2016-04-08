@@ -13,7 +13,7 @@ and removing calls to _DoWork will yield the same results. */
 
 #include "AzureIoTHub.h"
 
-static const char* connectionString = "HostName=[host].azure-devices.net;DeviceId=[device];SharedAccessKey=[key]";
+static const char* connectionString = "[device connection string]";
 
 // Define the Model
 BEGIN_NAMESPACE(WeatherStation);
