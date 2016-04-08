@@ -8,7 +8,7 @@
 #ifdef ARDUINO_SAMD_FEATHER_M0
 #include <Adafruit_WINC1500SSLClient.h>
 #elif defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000)
-#include <WifiSSLClient.h>
+#include <WiFiSSLClient.h>
 #elif defined(ESP8266)
 #include <WiFiClientSecure.h>
 #endif
