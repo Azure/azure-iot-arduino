@@ -1,6 +1,8 @@
 // Copyright (c) Arduino. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include <Arduino.h>
+
 #include "HTTPSClient.h"
 
 // Uncomment the below to see HTTP traffic in
@@ -8,14 +10,25 @@
 
 // #define DEBUG_STREAM Serial
 
-HTTPSClient::HTTPSClient() :
+HTTPSClient::HTTPSClient(Client* sslClient) :
+    _sslClient(sslClient),
     _contentLength(0)
 {
 }
 
 int HTTPSClient::begin(const char* host, int port)
 {
-    return connect(host, port);
+    return _sslClient->connect(host, port);
+}
+
+uint8_t HTTPSClient::connected()
+{
+    return _sslClient->connected();
+}
+
+void HTTPSClient::setTimeout(unsigned long timeout)
+{
+    _sslClient->setTimeout(timeout);
 }
 
 int HTTPSClient::sendRequest(const char* method, const char* path)
@@ -130,24 +143,35 @@ int HTTPSClient::readHeader(String& name, String& value)
 
 void HTTPSClient::end()
 {
-    stop();
+    _sslClient->stop();
+}
+
+int HTTPSClient::readBody(unsigned char *content, int length)
+{
+    _sslClient->readBytes(content, length);
+#ifdef DEBUG_STREAM
+    DEBUG_STREAM.write(content, length);
+    DEBUG_STREAM.println();
+#endif
+    return 1;
+}
+
+size_t HTTPSClient::write(uint8_t b)
+{
+    return _sslClient->write(b);
+}
+
+size_t HTTPSClient::write(const uint8_t *buffer, size_t size)
+{
+    return _sslClient->write(buffer, size);
 }
 
 String HTTPSClient::readLine()
 {
-    return readStringUntil('\n');
+    return _sslClient->readStringUntil('\n');
 }
 
 size_t HTTPSClient::contentLength()
 {
     return _contentLength;
-}
-
-int HTTPSClient::readBody(unsigned char *content, int length)
-{
-    readBytes(content, length);
-#ifdef DEBUG_STREAM
-    DEBUG_STREAM.write(content, length);
-#endif
-    return 1;
 }

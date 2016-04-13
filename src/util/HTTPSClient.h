@@ -5,27 +5,18 @@
 #ifndef HTTPSCLIENT_H
 #define HTTPSCLIENT_H
 
-#ifdef ARDUINO_SAMD_FEATHER_M0
-#include <Adafruit_WINC1500SSLClient.h>
-#elif defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000)
-#include <WiFiSSLClient.h>
-#elif defined(ESP8266)
-#include <WiFiClientSecure.h>
-#endif
+#include <Client.h>
+#include <Print.h>
 
 #define HTTPS_PORT          443
 
-#ifdef ARDUINO_SAMD_FEATHER_M0
-class HTTPSClient : public Adafruit_WINC1500SSLClient
-#elif defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000)
-class HTTPSClient : public WiFiSSLClient
-#elif defined(ESP8266)
-class HTTPSClient : public WiFiClientSecure
-#endif
+class HTTPSClient : Print
 {
     public:
-        HTTPSClient();
+        HTTPSClient(Client* sslClient);
         int begin(const char* host, int port = HTTPS_PORT);
+        uint8_t connected();
+        void setTimeout(unsigned long timeout);
         int sendRequest(const char* method, const char* path);
         int sendHeader(const String& header);
         int sendBody(const unsigned char *content, int length);
@@ -35,9 +26,13 @@ class HTTPSClient : public WiFiClientSecure
         int readBody(unsigned char *content, int length);
         void end();
 
+        virtual size_t write(uint8_t);
+        virtual size_t write(const uint8_t *buffer, size_t size);
+
     private:
         String readLine();
 
+        Client* _sslClient;
         size_t _contentLength;
 };
 

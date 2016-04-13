@@ -4,101 +4,63 @@
 // This example code shows how to use an Adafruit Feather M0 module and Microsoft Azure for IoT
 // applications.
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <time.h>
-#include <sys/time.h>
-#include <SPI.h>
-#ifdef ARDUINO_SAMD_FEATHER_M0
+// change the next three lines to use on non-Adafruit WINC1500 based boards/shields
 #include <Adafruit_WINC1500.h>
-#include <Adafruit_WINC1500Client.h>
-#include <Adafruit_WINC1500MDNS.h>
-#include <Adafruit_WINC1500Server.h>
 #include <Adafruit_WINC1500SSLClient.h>
 #include <Adafruit_WINC1500Udp.h>
-#elif defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000)
-#include <WiFi101.h>
-#endif
-#include <Adafruit_Sensor.h>
+
+// for WiFi101
+//#include <WiFi101.h>
+//#include <WiFiSSLClient.h>
+//#include <WiFiUdp.h>
+
+// for ESP8266
+//#include <ESP8266WiFi.h>
+//#include <WiFiClientSecure.h>
+//#include <WiFiUdp.h>
+
 #include <Adafruit_BME280.h>
+#include <NTPClient.h>
+#include <AzureIoTHub.h>
+
 #include "rem_ctrl_http.h"
-#include "NTPClient.h"
 
-
-#ifdef ARDUINO_SAMD_FEATHER_M0
+// for the Adafruit WINC1500 we need to create our own WiFi instance
+// Define the WINC1500 board connections below.
 #define WINC_CS   8
 #define WINC_IRQ  7
 #define WINC_RST  4
-#define WINC_EN   2
-
+#define WINC_EN   2     // or, tie EN to VCC
 // Setup the WINC1500 connection with the pins above and the default hardware SPI.
 Adafruit_WINC1500 WiFi(WINC_CS, WINC_IRQ, WINC_RST);
-#endif
-
 
 static const char ssid[] = "[Your WiFi network SSID or name]";
 static const char pass[] = "[Your WiFi network WPA password or WEP key]";
-static const char* connectionString = "[Device Connection String]";
 
 // The connection string is the one which begins with HostName=... and contains the DeviceId
 // and SharedAccessKey for this particular Thing on the Internet.
+static const char* connectionString = "[Device Connection String]";
 
-int status = WL_IDLE_STATUS;
+// change the next line to use on non-Adafruit WINC1500 based boards/shields
+Adafruit_WINC1500SSLClient sslClient; // for Adafruit WINC150
+//WiFiSSLClient sslClient; // for WiFi101
+//WiFiClientSecure sslClient; // for ESP8266
 
+AzureIoTHubClient iotHubClient(sslClient);
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 const int Bme280_cs_pin__i = 5;
 bool Bme_init_result = false;
 Adafruit_BME280 bme(Bme280_cs_pin__i);
-void initTime();
-
 
 void setup() {
-  // The Feather M0 loses it's COMn connection with every reset.
-  // This 10 s delay allows you to reselect the COM port and open the serial monitor window.
-  delay(10000);
-  
-  Serial.begin(9600);
+  initSerial();
+
   Serial.println("Azure_remote_monitoring Sketch.");
-#ifdef WINC_EN
-  pinMode(WINC_EN, OUTPUT);
-  digitalWrite(WINC_EN, HIGH);
-#endif
 
-  Serial.println("Checking for the presence of the BME280 temp/humid/press module.");
-  Bme_init_result = bme.begin();
-  if (Bme_init_result)
-  {
-    Serial.println("Found and initialized BME280 module.");
-  }
-  else
-  {
-    Serial.println("Warning! BME280 module not found.");
-  }
-  
-  Serial.println("Checking for the presence of the WiFi module.");
-  if (WiFi.status() == WL_NO_SHIELD) {
-    Serial.println("Warning! WiFi shield not found.");
-  }
-  else
-  {
-    Serial.println("WiFi module found.");
-  }
-
-  Serial.println("Attempting to connect to Wifi network.");
-  while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to SSID: ");
-    Serial.println(ssid);
-    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-    status = WiFi.begin(ssid, pass);
-
-    if (status != WL_CONNECTED) {
-      // wait 10 seconds for connection:
-      delay(10000);
-    }
-  }
-  Serial.println("Connected to wifi");
+  initWifi();
+  initTime();
+  initBME();
 
   if (rem_ctrl_set_connection_string(connectionString)) {
     Serial.print("Connection string successfully set to \"");
@@ -115,7 +77,7 @@ void setup() {
     Serial.println("Unable to initialize the Azure connection. Halting.");
   }
 
-  initTime();
+  iotHubClient.begin();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -141,7 +103,7 @@ void loop() {
 
     Sensor_read_next_ms__u32 = Curr_time_ms__u32 + Sensor_read_period_ms__u32;
   }
-  
+
   if (IS_TASK_TIME(Curr_time_ms__u32, Azure_io_update_next_ms__u32)) {
     rem_ctrl_http_run();
 
@@ -150,38 +112,75 @@ void loop() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void initTime() {
-#ifdef ARDUINO_SAMD_FEATHER_M0
-    Adafruit_WINC1500UDP     _udp;
-#elif defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000)
-    WiFiUDP     _udp;
-#endif
+void initSerial() {
+  //Initialize serial and wait for port to open:
+  Serial.begin(9600);
 
-    time_t epochTime = (time_t)-1;
-
-    NTPClient ntpClient;
-    ntpClient.begin();
-
-    while (true) {
-        epochTime = ntpClient.getEpochTime("0.pool.ntp.org");
-
-        if (epochTime == (time_t)-1) {
-            Serial.println("Fetching NTP epoch time failed! Waiting 5 seconds to retry.");
-            delay(5000);
-        } else {
-            Serial.print("Fetched NTP epoch time is: ");
-            Serial.println(epochTime);
-            break;
-        }
-    }
-    
-    ntpClient.end();
-
-    struct timeval tv;
-    tv.tv_sec = epochTime;
-    tv.tv_usec = 0;
-
-    settimeofday(&tv, NULL);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
 }
 
+void initWifi() {
+  // for the Adafruit WINC1500 we need to enable the chip
+  pinMode(WINC_EN, OUTPUT);
+  digitalWrite(WINC_EN, HIGH);
+
+  // check for the presence of the shield :
+  if (WiFi.status() == WL_NO_SHIELD) {
+    Serial.println("WiFi shield not present");
+    // don't continue:
+    while (true);
+  }
+
+  // attempt to connect to Wifi network:
+  Serial.print("Attempting to connect to SSID: ");
+  Serial.println(ssid);
+
+  // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
+  while (WiFi.begin(ssid, pass) != WL_CONNECTED) {
+    // unsuccessful, retry in 4 seconds
+    Serial.print("failed ... ");
+    delay(4000);
+    Serial.print("retrying ... ");
+  }
+
+  Serial.println("Connected to wifi");
+}
+
+void initTime() {
+  // change the next line to use on non-WINC1500 based boards/shields
+  Adafruit_WINC1500UDP ntpUdp; // for Adafruit WINC1500
+  // WiFiUDP ntpUdp; // for WiFi101 or ESP8266
+  NTPClient ntpClient(ntpUdp);
+
+  ntpClient.begin();
+
+  while (!ntpClient.update()) {
+    Serial.println("Fetching NTP epoch time failed! Waiting 5 seconds to retry.");
+    delay(5000);
+  }
+
+  ntpClient.end();
+
+  unsigned long epochTime = ntpClient.getEpochTime();
+
+  Serial.print("Fetched NTP epoch time is: ");
+  Serial.println(epochTime);
+
+  iotHubClient.setEpochTime(epochTime);
+}
+
+void initBME() {
+  Serial.println("Checking for the presence of the BME280 temp/humid/press module.");
+  Bme_init_result = bme.begin();
+  if (Bme_init_result)
+  {
+    Serial.println("Found and initialized BME280 module.");
+  }
+  else
+  {
+    Serial.println("Warning! BME280 module not found.");
+  }
+}
 

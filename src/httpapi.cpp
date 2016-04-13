@@ -7,18 +7,17 @@
 #include "sdk/httpapi.h"
 #include "iot_logging.h"
 
+#include "AzureIoTHubClient.h"
 #include "util/HTTPSClient.h"
 
-#define POOL_SIZE 1
 
-HTTPSClient httpsClients[POOL_SIZE];
+HTTPSClient* httpsClient = NULL;
 
 HTTPAPI_RESULT HTTPAPI_Init(void)
 {
-    for (int i = 0; i < POOL_SIZE; i++) {
-        httpsClients[i] = HTTPSClient();
-        httpsClients[i].setTimeout(10000);
-    }
+    httpsClient = new HTTPSClient(AzureIoTHubClient::sslClient);
+    httpsClient->setTimeout(10000);
+
     return HTTPAPI_OK;
 }
 
@@ -30,23 +29,14 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
 {
     HTTPSClient* client = NULL;
 
-    // find an available client to use
-    for (int i = 0; i < POOL_SIZE; i++) {
-        if (!httpsClients[i].connected()) {
-            client = &httpsClients[i];
-            break;
-        }
-    }
-
-    if (client) {
-        if (!client->begin(hostName)) {
-            // connection failed
-            LogError("HTTPS connection to %s failed\n", hostName);
-            client = NULL;
-        }
-    } else {
+    if (httpsClient->connected()) {
         // no clients available
         LogError("No HTTPS clients available\n");
+    } else if (httpsClient->begin(hostName)) {
+        client = httpsClient;
+    } else {
+        // connection failed
+        LogError("HTTPS connection to %s failed\n", hostName);
     }
 
     return ((HTTP_HANDLE)client);
