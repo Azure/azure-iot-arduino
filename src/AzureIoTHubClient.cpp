@@ -15,9 +15,6 @@ AzureIoTHubClient::AzureIoTHubClient(Client& sslClient)
 
 void AzureIoTHubClient::begin()
 {
-#if defined(ARDUINO_ARCH_ESP8266)
-    Serial.setDebugOutput(true);
-#endif
 }
 
 void AzureIoTHubClient::setEpochTime(unsigned long epochTime)

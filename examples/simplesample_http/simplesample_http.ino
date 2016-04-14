@@ -59,6 +59,9 @@ void initSerial() {
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
+
+  // uncomment the next line to enable debug output on ESP8266
+  //Serial.setDebugOutput(true);
 }
 
 void initWifi() {
