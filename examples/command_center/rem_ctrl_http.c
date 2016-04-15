@@ -9,6 +9,7 @@
 
 #ifdef ARDUINO
 #include "AzureIoTHub.h"
+#include "iot_logging.h"
 #else
 #include "serializer.h"
 #include "iothub_client_ll.h"
@@ -48,7 +49,7 @@ DEFINE_ENUM_STRINGS(IOTHUB_CLIENT_CONFIRMATION_RESULT, IOTHUB_CLIENT_CONFIRMATIO
 EXECUTE_COMMAND_RESULT TurnFanOn(BME280_data* device)
 {
     (void)device;
-    (void)printf("Turning Green LED on.\r\n");
+    LogInfo("Turning Green LED on.\r\n");
     digitalWrite(greenLedPin, HIGH);
     digitalWrite(redLedPin, LOW);
     return EXECUTE_COMMAND_SUCCESS;
@@ -57,7 +58,7 @@ EXECUTE_COMMAND_RESULT TurnFanOn(BME280_data* device)
 EXECUTE_COMMAND_RESULT TurnFanOff(BME280_data* device)
 {
     (void)device;
-    (void)printf("Turning red LED on.\r\n");
+    LogInfo("Turning red LED on.\r\n");
     digitalWrite(greenLedPin, LOW);
     digitalWrite(redLedPin, HIGH);
     return EXECUTE_COMMAND_SUCCESS;
@@ -79,9 +80,9 @@ void sendCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void* userContextCal
 {
     int messageTrackingId = (intptr_t)userContextCallback;
 
-    (void)printf("Message Id: %d Received.\r\n", messageTrackingId);
+    LogInfo("Message Id: %d Received.\r\n", messageTrackingId);
 
-    (void)printf("Result Call Back Called! Result is: %s \r\n", ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result));
+    LogInfo("Result Call Back Called! Result is: %s \r\n", ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result));
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -91,17 +92,17 @@ static void sendMessage(IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle, const unsign
     IOTHUB_MESSAGE_HANDLE messageHandle = IoTHubMessage_CreateFromByteArray(buffer, size);
     if (messageHandle == NULL)
     {
-        printf("unable to create a new IoTHubMessage\r\n");
+        LogInfo("unable to create a new IoTHubMessage\r\n");
     }
     else
     {
         if (IoTHubClient_LL_SendEventAsync(iotHubClientHandle, messageHandle, sendCallback, (void*)(uintptr_t)messageTrackingId) != IOTHUB_CLIENT_OK)
         {
-            printf("failed to hand over the message to IoTHubClient");
+            LogInfo("failed to hand over the message to IoTHubClient");
         }
         else
         {
-            printf("IoTHubClient accepted the message for delivery\r\n");
+            LogInfo("IoTHubClient accepted the message for delivery\r\n");
         }
         IoTHubMessage_Destroy(messageHandle);
     }
@@ -118,7 +119,7 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT IoTHubMessage(IOTHUB_MESSAGE_HANDLE mess
     size_t size;
     if (IoTHubMessage_GetByteArray(message, &buffer, &size) != IOTHUB_MESSAGE_OK)
     {
-        printf("unable to IoTHubMessage_GetByteArray\r\n");
+        LogInfo("unable to IoTHubMessage_GetByteArray\r\n");
         result = EXECUTE_COMMAND_ERROR;
     }
     else
@@ -127,7 +128,7 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT IoTHubMessage(IOTHUB_MESSAGE_HANDLE mess
         char* temp = malloc(size + 1);
         if (temp == NULL)
         {
-            printf("failed to malloc\r\n");
+            LogInfo("failed to malloc\r\n");
             result = EXECUTE_COMMAND_ERROR;
         }
         else
@@ -157,7 +158,7 @@ int rem_ctrl_http_init(void)
     
     if (serializer_init(NULL) != SERIALIZER_OK)
     {
-        (void)printf("Failed on serializer_init\r\n");
+        LogInfo("Failed on serializer_init\r\n");
     }
     else
     {
@@ -166,7 +167,7 @@ int rem_ctrl_http_init(void)
         iotHubClientHandle = IoTHubClient_LL_CreateFromConnectionString(connectionString, HTTP_Protocol);
         if (iotHubClientHandle == NULL)
         {
-            (void)printf("Failed on IoTHubClient_LL_Create\r\n");
+            LogInfo("Failed on IoTHubClient_LL_Create\r\n");
         }
         else
         {
@@ -175,13 +176,13 @@ int rem_ctrl_http_init(void)
             unsigned int minimumPollingTime = 9; // Because it can poll "after 9 seconds" polls will happen effectively at ~10 seconds.
             if (IoTHubClient_LL_SetOption(iotHubClientHandle, "MinimumPollingTime", &minimumPollingTime) != IOTHUB_CLIENT_OK)
             {
-                printf("failure to set option \"MinimumPollingTime\"\r\n");
+                LogInfo("failure to set option \"MinimumPollingTime\"\r\n");
             }
 
             myWeather = CREATE_MODEL_INSTANCE(RemoteMonitorExample, BME280_data);
             if (myWeather == NULL)
             {
-                (void)printf("Failed on CREATE_MODEL_INSTANCE\r\n");
+                LogInfo("Failed on CREATE_MODEL_INSTANCE\r\n");
             }
             else
             {
@@ -189,7 +190,7 @@ int rem_ctrl_http_init(void)
 
                 if (IoTHubClient_LL_SetMessageCallback(iotHubClientHandle, IoTHubMessage, myWeather) != IOTHUB_CLIENT_OK)
                 {
-                    printf("unable to IoTHubClient_SetMessageCallback\r\n");
+                    LogInfo("unable to IoTHubClient_SetMessageCallback\r\n");
                 }
                 else
                 {
@@ -230,7 +231,7 @@ void rem_ctrl_http_send_data(float Temp_c__f, float Pres_hPa__f, float Humi_pct_
     if (Init_level__i < 4) return;
 
     timeNow = (int)time(NULL);
-    sprintf(buff, "%d", timeNow);
+    sLogInfo(buff, "%d", timeNow);
     
     myWeather->DeviceId = "FeatherM0_w_BME280";
     myWeather->MTemperature = Temp_c__f;
@@ -242,24 +243,24 @@ void rem_ctrl_http_send_data(float Temp_c__f, float Pres_hPa__f, float Humi_pct_
     size_t destinationSize;
     if (SERIALIZE(&destination, &destinationSize, myWeather->DeviceId, myWeather->EventTime, myWeather->MTemperature, myWeather->Pressure, myWeather->Humidity) != IOT_AGENT_OK)
     {
-        (void)printf("Failed to serialize\r\n");
+        LogInfo("Failed to serialize\r\n");
     }
     else
     {
         IOTHUB_MESSAGE_HANDLE messageHandle = IoTHubMessage_CreateFromByteArray(destination, destinationSize);
         if (messageHandle == NULL)
         {
-            printf("unable to create a new IoTHubMessage\r\n");
+            LogInfo("unable to create a new IoTHubMessage\r\n");
         }
         else
         {
             if (IoTHubClient_LL_SendEventAsync(iotHubClientHandle, messageHandle, sendCallback, (void*)1) != IOTHUB_CLIENT_OK)
             {
-                printf("failed to hand over the message to IoTHubClient");
+                LogInfo("failed to hand over the message to IoTHubClient");
             }
             else
             {
-                printf("IoTHubClient accepted the message for delivery\r\n");
+                LogInfo("IoTHubClient accepted the message for delivery\r\n");
             }
     
             IoTHubMessage_Destroy(messageHandle);

@@ -57,14 +57,16 @@ void loop() {
 
 void initSerial() {
   //Initialize serial and wait for port to open:
+  // For SAMD boards (e.g. MKR1000, Adafruit WINC1500 based)
   Serial.begin(9600);
+  
+  // Uncomment the next two lines For ESP8266 boards (and comment out the line above)
+  // Serial.begin(115200);
+  // Serial.setDebugOutput(true);
 
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
-
-  // uncomment the next line to enable debug output on ESP8266
-  //Serial.setDebugOutput(true);
 }
 
 void initWifi() {
@@ -95,7 +97,7 @@ void initWifi() {
 }
 
 void initTime() {
-  // change the next line to use on non-WiFi101 or ESP8266 based boards/shields
+  // change the next line to use on non-WiFi101, for ESP8266 boards see comment below
   WiFiUDP ntpUdp;
   //Adafruit_WINC1500UDP ntpUdp; // for Adafruit WINC1500
   NTPClient ntpClient(ntpUdp);
@@ -115,5 +117,25 @@ void initTime() {
   Serial.println(epochTime);
 
   iotHubClient.setEpochTime(epochTime);
+  
+  // For ESP8266 boards comment out the above portion of the function and un-comment
+  // the remainder below.
+  
+  // time_t epochTime;
+
+  // configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+
+  // while (true) {
+  //     epochTime = time(NULL);
+
+  //     if (epochTime == 0) {
+  //         Serial.println("Fetching NTP epoch time failed! Waiting 2 seconds to retry.");
+  //         delay(2000);
+  //     } else {
+  //         Serial.print("Fetched NTP epoch time is: ");
+  //         Serial.println(epochTime);
+  //         break;
+  //     }
+  // }
 }
 

@@ -4,6 +4,7 @@
 #include "AzureIoTHub.h"
 #include "sdk/schemaserializer.h"
 #include "bme280.h"
+#include "iot_logging.h"
 
 
 static const char* deviceId = "[device-id]";

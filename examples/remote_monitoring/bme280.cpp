@@ -5,6 +5,7 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 #include "bme280.h"
+#include "iot_logging.h"
 
 const int Bme280_cs_pin__i = 5;
 bool Bme_init_result = false;
@@ -33,6 +34,6 @@ void getNextSample(float* Temperature, float* Humidity)
   //float Pres_hPa__f = bme.readPressure() / 100;
   *Humidity = bme.readHumidity();
   //printf("Temp=%.2f, Pres=%.2f, Humi=%.2f\n", Temp_c__f, Pres_hPa__f, Humi_pct__f);
-  printf("Temp=%.2f, Humi=%.2f\n", *Temperature, *Humidity);
+  LogInfo("Temp=%.2f, Humi=%.2f\n", *Temperature, *Humidity);
 }
 
