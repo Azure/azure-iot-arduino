@@ -15,7 +15,6 @@ HTTPSClient* httpsClient = NULL;
 
 HTTPAPI_RESULT HTTPAPI_Init(void)
 {
-    httpsClient = new HTTPSClient(AzureIoTHubClient::sslClient);
     httpsClient->setTimeout(10000);
 
     return HTTPAPI_OK;

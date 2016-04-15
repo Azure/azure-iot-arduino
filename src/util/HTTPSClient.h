@@ -13,7 +13,7 @@
 class HTTPSClient : Print
 {
     public:
-        HTTPSClient(Client* sslClient);
+        HTTPSClient(Client& sslClient);
         int begin(const char* host, int port = HTTPS_PORT);
         uint8_t connected();
         void setTimeout(unsigned long timeout);

@@ -10,8 +10,8 @@
 
 // #define DEBUG_STREAM Serial
 
-HTTPSClient::HTTPSClient(Client* sslClient) :
-    _sslClient(sslClient),
+HTTPSClient::HTTPSClient(Client& sslClient) :
+    _sslClient(&sslClient),
     _contentLength(0)
 {
 }

@@ -129,7 +129,7 @@ void simplesample_http_run(void)
     else
     {
         IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle = IoTHubClient_LL_CreateFromConnectionString(connectionString, HTTP_Protocol);
-        srand((unsigned int)time(NULL));
+        srand((unsigned int)get_time(NULL));
         int avgWindSpeed = 10;
 
         if (iotHubClientHandle == NULL)
