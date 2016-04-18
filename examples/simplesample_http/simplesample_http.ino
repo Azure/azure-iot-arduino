@@ -25,7 +25,6 @@
 // // Setup the WINC1500 connection with the pins above and the default hardware SPI.
 // Adafruit_WINC1500 WiFi(WINC_CS, WINC_IRQ, WINC_RST);
 
-#include <NTPClient.h>
 #include <AzureIoTHub.h>
 
 #include "simplesample_http.h"

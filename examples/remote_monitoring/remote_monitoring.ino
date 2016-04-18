@@ -25,7 +25,6 @@
 // // Setup the WINC1500 connection with the pins above and the default hardware SPI.
 // Adafruit_WINC1500 WiFi(WINC_CS, WINC_IRQ, WINC_RST);
 
-#include <NTPClient.h>
 #include <AzureIoTHub.h>
 
 #include "remote_monitoring.h"
@@ -33,17 +32,23 @@
 char ssid[] = "[Your WiFi network SSID or name]";
 char pass[] = "[Your WiFi network WPA password or WEP key]";
 
-// change the next line to use on non-WiFi101 based boards/shields
+// change the next two lines to use on non-WiFi101 based boards/shields
 WiFiSSLClient sslClient;
-//WiFiClientSecure sslClient; // for ESP8266
-//Adafruit_WINC1500SSLClient sslClient; // for Adafruit WINC1500
+WiFiUDP udp;
 
-AzureIoTHubClient iotHubClient(sslClient);
+// for ESP8266
+//WiFiClientSecure sslClient;
+//WiFiUDP udp;
+
+// for Adafruit WINC1500
+//Adafruit_WINC1500SSLClient sslClient;
+//Adafruit_WINC1500UDP udp;
+
+AzureIoTHubClient iotHubClient(sslClient, udp);
 
 void setup() {
   initSerial();
   initWifi();
-  initTime();
 
   iotHubClient.begin();
 }
@@ -95,47 +100,3 @@ void initWifi() {
 
   Serial.println("Connected to wifi");
 }
-
-void initTime() {
-  // change the next line to use on non-WiFi101, for ESP8266 boards see comment below
-  WiFiUDP ntpUdp;
-  //Adafruit_WINC1500UDP ntpUdp; // for Adafruit WINC1500
-  NTPClient ntpClient(ntpUdp);
-
-  ntpClient.begin();
-
-  while (!ntpClient.update()) {
-    Serial.println("Fetching NTP epoch time failed! Waiting 5 seconds to retry.");
-    delay(5000);
-  }
-
-  ntpClient.end();
-
-  unsigned long epochTime = ntpClient.getEpochTime();
-
-  Serial.print("Fetched NTP epoch time is: ");
-  Serial.println(epochTime);
-
-  iotHubClient.setEpochTime(epochTime);
-  
-  // For ESP8266 boards comment out the above portion of the function and un-comment
-  // the remainder below.
-  
-  // time_t epochTime;
-
-  // configTime(0, 0, "pool.ntp.org", "time.nist.gov");
-
-  // while (true) {
-  //     epochTime = time(NULL);
-
-  //     if (epochTime == 0) {
-  //         Serial.println("Fetching NTP epoch time failed! Waiting 2 seconds to retry.");
-  //         delay(2000);
-  //     } else {
-  //         Serial.print("Fetched NTP epoch time is: ");
-  //         Serial.println(epochTime);
-  //         break;
-  //     }
-  // }
-}
-
