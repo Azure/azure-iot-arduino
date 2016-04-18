@@ -231,7 +231,7 @@ void rem_ctrl_http_send_data(float Temp_c__f, float Pres_hPa__f, float Humi_pct_
     if (Init_level__i < 4) return;
 
     timeNow = (int)time(NULL);
-    sLogInfo(buff, "%d", timeNow);
+    sprintf(buff, "%d", timeNow);
     
     myWeather->DeviceId = "FeatherM0_w_BME280";
     myWeather->MTemperature = Temp_c__f;
