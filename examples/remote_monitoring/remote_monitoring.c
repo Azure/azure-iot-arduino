@@ -125,7 +125,7 @@ void remote_monitoring_run(void)
 {
         initBme();
 
-        srand((unsigned int)time(NULL));
+        srand((unsigned int)get_time(NULL));
         if (serializer_init(NULL) != SERIALIZER_OK)
         {
             LogInfo("Failed on serializer_init\r\n");
