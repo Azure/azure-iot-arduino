@@ -21,11 +21,15 @@ You should have the following ready before beginning with any board:
 -   [Arduino IDE 1.6.8](https://www.arduino.cc/en/Main/Software)
 -   Install the `AzureIoTHub` library via the Arduino IDE Library Manager
 
+# Simple Sample Instructions
+
 ## MKR1000 or Zero + Wifi101
-1. Open the AzureIoTHub SAMD sample from the Arduino IDE File->Examples menu.
-2. Update Wifi SSID/Password in simplesample_http.ino 
+1. Open the `simplesample_http` example from the Arduino IDE File->Examples->AzureIoTHub menu.
+2. Install the `RTCZero` library from the Arduino IDE Library Manager.
+3. Install the `NTPClient` library from the Arduino IDE Library Manager.
+4. Update Wifi SSID/Password in simplesample_http.ino 
     * Ensure you are using a wifi network that does not require additional manual steps after connection, such as opening a web browser.
-3. Update IoT Hub Connection string in simplesample_http.c
+5. Update IoT Hub Connection string in simplesample_http.c
 
 ## ESP8266
 ##### Sparkfun Thing, Adafruit Feather Huzzah, or generic ESP8266 board
@@ -36,10 +40,11 @@ You should have the following ready before beginning with any board:
     * Open Boards Manager from Tools > Board menu and install esp8266 platform 2.1.0 or later 
     * Select your ESP8266 board from Tools > Board menu after installation
     
-2. Open the AzureIoTHub ESP8266 sample from the Arduino IDE File->Examples menu.
-3. Update Wifi SSID/Password in simplesample_http.ino 
+2. Open the `simplesample_http` example from the Arduino IDE File->Examples->AzureIoTHub menu.
+3. Update the sketch as directed by comments in the sample to support the ESP8266 board.
+4. Update Wifi SSID/Password in simplesample_http.ino 
     * Ensure you are using a wifi network that does not require additional manual steps after connection, such as opening a web browser.
-4. Update IoT Hub Connection string in simplesample_http.c
+5. Update IoT Hub Connection string in simplesample_http.c
 
 
 ## Adafruit Feather M0
@@ -50,10 +55,12 @@ You should have the following ready before beginning with any board:
     * Select your Adafruit Feather M0 from Tools > Board menu after installation
 2. Install the [Adafruit WINC1500 wifi library](https://learn.adafruit.com/adafruit-feather-m0-wifi-atwinc1500/using-the-wifi-module)
 3. Install the `RTCZero` library from the Arduino IDE Library Manager.
-2. Open the AzureIoTHub SAMD sample from the Arduino IDE File->Examples menu.
-3. Update Wifi SSID/Password in simplesample_http.ino 
+4. Install the `NTPClient` library from the Arduino IDE Library Manager.
+5. Open the `simplesample_http` example from the Arduino IDE File->Examples->AzureIoTHub menu.
+6. Update the sketch as directed by comments in the sample to support the ESP8266 board.
+7. Update Wifi SSID/Password in simplesample_http.ino 
     * Ensure you are using a wifi network that does not require additional manual steps after connection, such as opening a web browser.
-4. Update IoT Hub Connection string in simplesample_http.c
+8. Update IoT Hub Connection string in simplesample_http.c
 
 ## License
 
