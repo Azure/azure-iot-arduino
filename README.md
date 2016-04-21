@@ -25,11 +25,12 @@ You should have the following ready before beginning with any board:
 
 ## MKR1000 or Zero + Wifi101
 1. Open the `simplesample_http` example from the Arduino IDE File->Examples->AzureIoTHub menu.
-2. Install the `RTCZero` library from the Arduino IDE Library Manager.
+2. Install the `WiFi101` library from the Arduino IDE Library Manager.
 3. Install the `NTPClient` library from the Arduino IDE Library Manager.
-4. Update Wifi SSID/Password in simplesample_http.ino 
+4. Install the `RTCZero` library from the Arduino IDE Library Manager.
+5. Update Wifi SSID/Password in simplesample_http.ino 
     * Ensure you are using a wifi network that does not require additional manual steps after connection, such as opening a web browser.
-5. Update IoT Hub Connection string in simplesample_http.c
+6. Update IoT Hub Connection string in simplesample_http.c
 
 ## ESP8266
 ##### Sparkfun Thing, Adafruit Feather Huzzah, or generic ESP8266 board
@@ -37,7 +38,7 @@ You should have the following ready before beginning with any board:
 1. Install esp8266 board support into your Arduino IDE.
     * Start Arduino and open Preferences window.
     * Enter `http://arduino.esp8266.com/stable/package_esp8266com_index.json` into Additional Board Manager URLs field. You can add multiple URLs, separating them with commas.
-    * Open Boards Manager from Tools > Board menu and install esp8266 platform 2.1.0 or later 
+    * Open Boards Manager from Tools > Board menu and install esp8266 platform 2.2.0 or later 
     * Select your ESP8266 board from Tools > Board menu after installation
     
 2. Open the `simplesample_http` example from the Arduino IDE File->Examples->AzureIoTHub menu.
