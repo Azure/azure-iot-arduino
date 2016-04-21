@@ -13,7 +13,6 @@ AzureIoTHubClient	KEYWORD1
 #######################################
 
 begin	KEYWORD2
-setEpochTime	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)

@@ -4,16 +4,22 @@
 #ifdef __cplusplus
 
 #include <Client.h>
+#include <Udp.h>
+
+#include <NTPClient.h>
+
+#include "util/HTTPSClient.h"
 
 class AzureIoTHubClient
 {
 public:
-    AzureIoTHubClient(Client& sslClient);
+    AzureIoTHubClient(Client& sslClient, UDP& ntpUdp);
 
     void begin();
-    void setEpochTime(unsigned long epochTime);
 
-    static Client* sslClient;
+private:
+    HTTPSClient _httpsClient;
+    NTPClient _ntpClient;
 };
 
 #endif

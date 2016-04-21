@@ -230,8 +230,8 @@ void rem_ctrl_http_send_data(float Temp_c__f, float Pres_hPa__f, float Humi_pct_
     // Don't run this function unless the initialization succeeded.
     if (Init_level__i < 4) return;
 
-    timeNow = (int)time(NULL);
-    sLogInfo(buff, "%d", timeNow);
+    timeNow = (int)get_time(NULL);
+    sprintf(buff, "%d", timeNow);
     
     myWeather->DeviceId = "FeatherM0_w_BME280";
     myWeather->MTemperature = Temp_c__f;

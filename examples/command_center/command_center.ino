@@ -20,7 +20,6 @@
 //#include <WiFiUdp.h>
 
 #include <Adafruit_BME280.h>
-#include <NTPClient.h>
 #include <AzureIoTHub.h>
 
 #include "rem_ctrl_http.h"
@@ -41,12 +40,19 @@ static const char pass[] = "[Your WiFi network WPA password or WEP key]";
 // and SharedAccessKey for this particular Thing on the Internet.
 static const char* connectionString = "[Device Connection String]";
 
-// change the next line to use on non-Adafruit WINC1500 based boards/shields
-Adafruit_WINC1500SSLClient sslClient; // for Adafruit WINC150
-//WiFiSSLClient sslClient; // for WiFi101
-//WiFiClientSecure sslClient; // for ESP8266
+// change the next two lines to use on non-Adafruit WINC1500 based boards/shields
+Adafruit_WINC1500SSLClient sslClient;
+Adafruit_WINC1500UDP udp;
 
-AzureIoTHubClient iotHubClient(sslClient);
+// for WiFi101
+//WiFiSSLClient sslClient;
+//WiFiUDP udp;
+
+// for ESP8266
+//WiFiClientSecure sslClient;
+//WiFiUDP udp;
+
+AzureIoTHubClient iotHubClient(sslClient, udp);
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 const int Bme280_cs_pin__i = 5;
@@ -59,7 +65,6 @@ void setup() {
   Serial.println("Azure_remote_monitoring Sketch.");
 
   initWifi();
-  initTime();
   initBME();
 
   if (rem_ctrl_set_connection_string(connectionString)) {
@@ -151,50 +156,6 @@ void initWifi() {
   }
 
   Serial.println("Connected to wifi");
-}
-
-void initTime() {
-  // change the next line to use on non-WINC1500 based boards/shields
-  Adafruit_WINC1500UDP ntpUdp; // for Adafruit WINC1500
-  // WiFiUDP ntpUdp; // for WiFi101 
-  // for ESP8266 boards see comment below
-  NTPClient ntpClient(ntpUdp);
-
-  ntpClient.begin();
-
-  while (!ntpClient.update()) {
-    Serial.println("Fetching NTP epoch time failed! Waiting 5 seconds to retry.");
-    delay(5000);
-  }
-
-  ntpClient.end();
-
-  unsigned long epochTime = ntpClient.getEpochTime();
-
-  Serial.print("Fetched NTP epoch time is: ");
-  Serial.println(epochTime);
-
-  iotHubClient.setEpochTime(epochTime);
-  
-  // For ESP8266 boards comment out the above portion of the function and un-comment
-  // the remainder below.
-  
-  // time_t epochTime;
-
-  // configTime(0, 0, "pool.ntp.org", "time.nist.gov");
-
-  // while (true) {
-  //     epochTime = time(NULL);
-
-  //     if (epochTime == 0) {
-  //         Serial.println("Fetching NTP epoch time failed! Waiting 2 seconds to retry.");
-  //         delay(2000);
-  //     } else {
-  //         Serial.print("Fetched NTP epoch time is: ");
-  //         Serial.println(epochTime);
-  //         break;
-  //     }
-  // }
 }
 
 void initBME() {

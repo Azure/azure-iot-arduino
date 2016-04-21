@@ -26,7 +26,6 @@ copy "%~dp0\temp\azure-iot-sdks\c\serializer\src\" "%~dp0\sdk"
 copy "%~dp0\temp\azure-iot-sdks\c\serializer\inc\" "%~dp0\sdk"
 copy "%~dp0\temp\azure-iot-sdks\c\azure-c-shared-utility\c\src\" "%~dp0\sdk"
 copy "%~dp0\temp\azure-iot-sdks\c\azure-c-shared-utility\c\inc\" "%~dp0\sdk"
-copy "%~dp0\temp\azure-iot-sdks\c\azure-c-shared-utility\c\adapters\agenttime.c" "%~dp0\sdk"
 
 del "%~dp0\sdk\iot_logging.h"
 del "%~dp0\sdk\iothubtransportamqp.*"
