@@ -64,6 +64,4 @@ before_install:
 install:
   - ln -s $PWD $HOME/Arduino/libraries/.
 script:
-  - buildExampleSketch command_center
-  - buildExampleSketch remote_monitoring
   - buildExampleSketch simplesample_http
