@@ -16,7 +16,7 @@ int fprintf(FILE* file, const char* format, ...) {
     int ret;
     va_list arglist;
     va_start(arglist, format);
-    ret = ets_vprintf(format, arglist);
+    ret = ets_vprintf(ets_putc, format, arglist);
     va_end(arglist);
     return ret;
 }
