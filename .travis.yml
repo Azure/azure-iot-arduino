@@ -5,11 +5,8 @@ env:
   matrix:
     - BOARD="arduino:samd:arduino_zero_edbg"
     - BOARD="arduino:samd:mkr1000"
-    - BOARD="esp8266:esp8266:huzzah"
+    - BOARD="esp8266:esp8266:huzzah:FlashSize=4M3M,CpuFrequency=80"
     - BOARD="esp8266:esp8266:thing"
-matrix:
-  allow_failures:
-    - env: BOARD="esp8266:esp8266:huzzah"
 before_install:
   - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
   - sleep 3
@@ -22,39 +19,22 @@ before_install:
       arduino --install-boards arduino:samd;
       arduino --install-library WiFi101;
       arduino --install-library RTCZero;
+      arduino --install-library NTPClient;
     fi
   - if [[ "$BOARD" =~ "esp8266:esp8266:" ]]; then
       arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" --install-boards esp8266:esp8266;
       arduino --pref "boardsmanager.additional.urls=" --save-prefs;
+      arduino --install-library NTPClient;
+      arduino --install-library NTPClient;
     fi
-  - arduino --install-library "Adafruit Unified Sensor"
-  - arduino --install-library "Adafruit BME280 Library";
-  - mkdir -p $HOME/Arduino/libraries
-  - git clone https://github.com/arduino-libraries/NTPClient.git $HOME/Arduino/libraries/NTPClient
   - findAndReplace() { sed -i'' -e"s|$1|$2|g" "$3"; }
   - buildExampleSketch() {
       EXAMPLE_SKETCH=$PWD/examples/$1/$1.ino;
 
-      if [[ "$BOARD" =~ "arduino:samd:" ]]; then
-        findAndReplace "Adafruit_WINC1500 WiFi" "//Adafruit_WINC1500 WiFi" $EXAMPLE_SKETCH;
-
-        findAndReplace Adafruit_WINC1500Udp WiFiUdp $EXAMPLE_SKETCH;
-        findAndReplace Adafruit_WINC1500UDP WiFiUDP $EXAMPLE_SKETCH;
-        findAndReplace Adafruit_WINC1500SSLClient WiFiSSLClient $EXAMPLE_SKETCH;
-        findAndReplace Adafruit_WINC1500 WiFi101 $EXAMPLE_SKETCH;        
-      fi
-
       if [[ "$BOARD" =~ "esp8266:esp8266:" ]]; then
-        findAndReplace "Adafruit_WINC1500 WiFi" "//Adafruit_WINC1500 WiFi" $EXAMPLE_SKETCH;
-
         findAndReplace WiFi101 ESP8266WiFi $EXAMPLE_SKETCH;
         findAndReplace WiFiSSLClient WiFiClientSecure $EXAMPLE_SKETCH;
-        findAndReplace WiFiUdp WiFiUdp $EXAMPLE_SKETCH;
-
-        findAndReplace Adafruit_WINC1500Udp WiFiUdp $EXAMPLE_SKETCH;
-        findAndReplace Adafruit_WINC1500UDP WiFiUDP $EXAMPLE_SKETCH;
-        findAndReplace Adafruit_WINC1500SSLClient WiFiClientSecure $EXAMPLE_SKETCH;
-        findAndReplace Adafruit_WINC1500 ESP8266WiFi $EXAMPLE_SKETCH;        
+        findAndReplace WiFiUdp WiFiUdp $EXAMPLE_SKETCH; 
       fi
 
       cat $EXAMPLE_SKETCH;
