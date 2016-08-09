@@ -98,6 +98,12 @@ typedef struct IOTHUB_CLIENT_CONFIG_TAG
     *	in the include @c iothubtransporthttp.h */
     IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol;
 
+    /** @brief	SharedAccessKey SAS Token. */
+    const char* sharedAccessKeyForSASToken;
+
+    /** @brief	SharedAccessKeyName for SAS Token. */
+    const char* sharedAccessKeyNameForSASToken;
+
     /** @brief	A string that identifies the device. */
     const char* deviceId;
     

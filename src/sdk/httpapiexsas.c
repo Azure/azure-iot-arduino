@@ -120,6 +120,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_SAS_ExecuteRequest(HTTPAPIEX_SAS_HANDLE sasHandle, HT
                     /*Codes_SRS_HTTPAPIEXSAS_06_012: [If the return result of SASToken_Create is NULL then fallthrough.]*/
                     size_t expiry = (size_t)(difftime(currentTime, 0) + 3600);
                     STRING_HANDLE newSASToken = SASToken_Create(state->key, state->uriResource, state->keyName, expiry);
+                    LogInfo("key: %s\r\n", state->key);
                     if (newSASToken != NULL)
                     {
                         /*Codes_SRS_HTTPAPIEXSAS_06_013: [HTTPHeaders_ReplaceHeaderNameValuePair shall be invoked with "Authorization" as its second argument and STRING_c_str (newSASToken) as its third argument.]*/
