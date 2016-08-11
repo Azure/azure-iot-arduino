@@ -121,7 +121,11 @@ IOTHUB_CLIENT_LL_HANDLE IoTHubClient_LL_CreateFromConnectionString(const char* i
     LogInfo("IoT Hub SDK for C, version %s\r\n", IoTHubClient_GetVersionString());
 
     /* SRS_IOTHUBCLIENT_LL_12_003: [IoTHubClient_LL_CreateFromConnectionString shall verify the input parameter and if it is NULL then return NULL] */
-    if (deviceConnectionString == NULL)
+    if (iothubOwnerConnectionString == NULL)
+    {
+        LogError("Input parameter is NULL: iothubOwnerConnectionString\r\n");
+    }
+    else if (deviceConnectionString == NULL)
     {
         LogError("Input parameter is NULL: deviceConnectionString\r\n");
     }
@@ -338,12 +342,12 @@ IOTHUB_CLIENT_LL_HANDLE IoTHubClient_LL_Create(const IOTHUB_CLIENT_CONFIG* confi
     else if (config->sharedAccessKeyForSASToken == NULL)
     {
         result = NULL;
-        LogError("invalid sharedAccessKeyForSASToken (NULL detected)\r\n");
+        LogError("Invalid sharedAccessKeyForSASToken (NULL detected)\r\n");
     }
     else if (config->sharedAccessKeyNameForSASToken == NULL)
     {
         result = NULL;
-        LogError("invalid sharedAccessKeyNameForSASToken (NULL detected)\r\n");
+        LogError("Invalid sharedAccessKeyNameForSASToken (NULL detected)\r\n");
     }
     else
     {

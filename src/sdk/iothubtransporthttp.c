@@ -33,8 +33,7 @@ const char* IOTHUB_CORRELATION_ID = "iothub-correlationid";
 
 /*DEFAULT_GETMINIMUMPOLLINGTIME is the minimum time in seconds allowed between 2 consecutive GET issues to the service (GET=fetch messages)*/
 /*the default is 25 minutes*/
-//#define DEFAULT_GETMINIMUMPOLLINGTIME ((unsigned int)25*60) 
-#define DEFAULT_GETMINIMUMPOLLINGTIME ((unsigned int)1)
+#define DEFAULT_GETMINIMUMPOLLINGTIME ((unsigned int)25*60) 
 
 #define MAXIMUM_MESSAGE_SIZE (255*1024-1)
 #define MAXIMUM_PAYLOAD_OVERHEAD 384
