@@ -9,6 +9,7 @@
 
 #include <stddef.h>
 #include <time.h>
+#include <limits.h>
 
 #include "agenttime.h"
 #include "strings.h"
@@ -107,35 +108,24 @@ HTTPAPIEX_RESULT HTTPAPIEX_SAS_ExecuteRequest(HTTPAPIEX_SAS_HANDLE sasHandle, HT
             if (HTTPHeaders_FindHeaderValue(requestHttpHeadersHandle, "Authorization") != NULL)
             {
                 HTTPAPIEX_SAS_STATE* state = (HTTPAPIEX_SAS_STATE*)sasHandle;
-                /*Codes_SRS_HTTPAPIEXSAS_06_018: [A value of type time_t that shall be known as currentTime is obtained from calling get_time.]*/
-                time_t currentTime = get_time(NULL);
-                /*Codes_SRS_HTTPAPIEXSAS_06_019: [If the value of currentTime is (time_t)-1 is then fallthrough.]*/
-                if (currentTime == (time_t)-1)
+                /* get_time or time(0) will not work so send the expiry to UNIT_MAX */
+                size_t expiry = UINT_MAX;
+                STRING_HANDLE newSASToken = SASToken_Create(state->key, state->uriResource, state->keyName, expiry);
+
+                if (newSASToken != NULL)
                 {
-                    LogError("Time does not appear to be working.\r\n");
+                    /*Codes_SRS_HTTPAPIEXSAS_06_013: [HTTPHeaders_ReplaceHeaderNameValuePair shall be invoked with "Authorization" as its second argument and STRING_c_str (newSASToken) as its third argument.]*/
+                    if (HTTPHeaders_ReplaceHeaderNameValuePair(requestHttpHeadersHandle, "Authorization", STRING_c_str(newSASToken)) != HTTP_HEADERS_OK)
+                    {
+                        /*Codes_SRS_HTTPAPIEXSAS_06_014: [If the result of the invocation of HTTPHeaders_ReplaceHeaderNameValuePair is NOT HTTP_HEADERS_OK then fallthrough.]*/
+                        LogError("Unable to replace the old SAS Token.\r\n");
+                    }
+                    /*Codes_SRS_HTTPAPIEXSAS_06_015: [STRING_delete(newSASToken) will be invoked.]*/
+                    STRING_delete(newSASToken);
                 }
                 else
                 {
-                    /*Codes_SRS_HTTPAPIEXSAS_06_011: [SASToken_Create shall be invoked.]*/
-                    /*Codes_SRS_HTTPAPIEXSAS_06_012: [If the return result of SASToken_Create is NULL then fallthrough.]*/
-                    size_t expiry = (size_t)(difftime(currentTime, 0) + 3600);
-                    STRING_HANDLE newSASToken = SASToken_Create(state->key, state->uriResource, state->keyName, expiry);
-                    LogInfo("key: %s\r\n", state->key);
-                    if (newSASToken != NULL)
-                    {
-                        /*Codes_SRS_HTTPAPIEXSAS_06_013: [HTTPHeaders_ReplaceHeaderNameValuePair shall be invoked with "Authorization" as its second argument and STRING_c_str (newSASToken) as its third argument.]*/
-                        if (HTTPHeaders_ReplaceHeaderNameValuePair(requestHttpHeadersHandle, "Authorization", STRING_c_str(newSASToken)) != HTTP_HEADERS_OK)
-                        {
-                            /*Codes_SRS_HTTPAPIEXSAS_06_014: [If the result of the invocation of HTTPHeaders_ReplaceHeaderNameValuePair is NOT HTTP_HEADERS_OK then fallthrough.]*/
-                            LogError("Unable to replace the old SAS Token.\r\n");
-                        }
-                        /*Codes_SRS_HTTPAPIEXSAS_06_015: [STRING_delete(newSASToken) will be invoked.]*/
-                        STRING_delete(newSASToken);
-                    }
-                    else
-                    {
-                        LogError("Unable to create a new SAS token.\r\n");
-                    }
+                    LogError("Unable to create a new SAS token.\r\n");
                 }
             }
         }

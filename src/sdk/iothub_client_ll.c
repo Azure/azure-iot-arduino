@@ -32,24 +32,52 @@ typedef struct IOTHUB_CLIENT_LL_HANDLE_DATA_TAG
     time_t lastMessageReceiveTime;
 }IOTHUB_CLIENT_LL_HANDLE_DATA;
 
+typedef struct IOTHUB_CLIENT_LL_AUTH_TOKEN_DATA_TAG
+{
+    STRING_HANDLE SharedAccessKeyName;
+    STRING_HANDLE SharedAccessKey;
+}IOTHUB_CLIENT_LL_AUTH_TOKEN_DATA;
+
 static const char HOSTNAME_TOKEN[] = "HostName";
 static const char DEVICEID_TOKEN[] = "DeviceId";
 static const char DEVICEKEY_TOKEN[] = "SharedAccessKey";
 static const char PROTOCOL_GATEWAY_HOST[] = "GatewayHostName";
 
-// for creating SAS Token
-static const char SHARED_ACCESS_KEYNAME[] = "SharedAccessKeyName"; //iothubowner
+// SAS Token Creation
+static const char SHARED_ACCESS_KEYNAME[] = "SharedAccessKeyName";
 static const char SHARED_ACCESS_KEY[] = "SharedAccessKey";
 
-const char* getSharedAccessKeyForSASToken(const char* iothubOwnerConnectionString)
+const IOTHUB_CLIENT_LL_AUTH_TOKEN_DATA* getAuthTokenData(const char* iothubOwnerConnectionString)
 {
     STRING_TOKENIZER_HANDLE tokenizer = NULL;
-    if (iothubOwnerConnectionString == NULL)
+    STRING_HANDLE connString = NULL;
+    STRING_HANDLE tokenString = NULL;
+    STRING_HANDLE valueString = NULL;
+    IOTHUB_CLIENT_LL_AUTH_TOKEN_DATA* result = NULL;
+
+    if ((connString = STRING_construct(iothubOwnerConnectionString)) == NULL)
+    {
+        LogError("Error constructing connectiong String\r\n");
+    }
+    else if ((tokenizer = STRING_TOKENIZER_create(connString)) == NULL)
+    {
+        LogError("Error creating Tokenizer\r\n");
+    }
+    else if ((tokenString = STRING_new()) == NULL)
+    {
+        LogError("Error creating Token String\r\n");
+    }
+    else if ((valueString = STRING_new()) == NULL)
+    {
+        LogError("Error creating Value String\r\n");
+    }
+    else if (iothubOwnerConnectionString == NULL)
     {
         LogError("Input parameter is NULL: iothubOwnerConnectionString\r\n");
     }
     else
     {
+        result = (IOTHUB_CLIENT_LL_AUTH_TOKEN_DATA*)malloc(sizeof(IOTHUB_CLIENT_LL_AUTH_TOKEN_DATA));
         while ((STRING_TOKENIZER_get_next_token(tokenizer, tokenString, "=") == 0))
         {
             if (STRING_TOKENIZER_get_next_token(tokenizer, valueString, ";") != 0)
@@ -62,16 +90,26 @@ const char* getSharedAccessKeyForSASToken(const char* iothubOwnerConnectionStrin
                 const char* s_token = STRING_c_str(tokenString);
                 if (strcmp(s_token, SHARED_ACCESS_KEYNAME) == 0)
                 {
-                    LogInfo("SHARED_ACCESS_KEYNAME: %s\r\n", STRING_clone(valueString));
+                    result->SharedAccessKeyName = STRING_clone(valueString);
                 }
-                else if (strcmp(s_token, SHARED_ACCESS_KEY) == 0)
+
+                if (strcmp(s_token, SHARED_ACCESS_KEY) == 0)
                 {
-                    LogInfo("SHARED_ACCESS_KEY: %s\r\n", STRING_clone(valueString));
-                    return STRING_clone(valueString);
+                    result->SharedAccessKey = STRING_clone(valueString);
                 }
             }
         }
     }
+    if (connString != NULL)
+    STRING_delete(connString);
+    if (tokenString != NULL)
+    STRING_delete(tokenString);
+    if (valueString != NULL)
+    STRING_delete(valueString);
+    if (tokenizer != NULL)
+    STRING_TOKENIZER_destroy(tokenizer);
+
+    return result;
 }
 
 IOTHUB_CLIENT_LL_HANDLE IoTHubClient_LL_CreateFromConnectionString(const char* iothubOwnerConnectionString, const char* deviceConnectionString, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
@@ -113,11 +151,13 @@ IOTHUB_CLIENT_LL_HANDLE IoTHubClient_LL_CreateFromConnectionString(const char* i
             STRING_HANDLE deviceKeyString = NULL;
             STRING_HANDLE protocolGateway = NULL;
 
+            IOTHUB_CLIENT_LL_AUTH_TOKEN_DATA* authTokenData = getAuthTokenData(iothubOwnerConnectionString);
+            if(authTokenData != NULL && authTokenData->SharedAccessKeyName != NULL && authTokenData->SharedAccessKey != NULL)
+            {
+                config->sharedAccessKeyNameForSASToken = STRING_c_str(authTokenData->SharedAccessKeyName);
+                config->sharedAccessKeyForSASToken =  STRING_c_str(authTokenData->SharedAccessKey);
+            }
             config->protocol = protocol;
-            config->sharedAccessKeyForSASToken = getSharedAccessKeyForSASToken(iothubOwnerConnectionString);
-            config->sharedAccessKeyNameForSASToken = "iothubowner";
-            LogInfo("config->sharedAccessKeyForSASToken: %s\r\n", config->sharedAccessKeyForSASToken);
-
             config->iotHubName = NULL;
             config->iotHubSuffix = NULL;
             config->deviceId = NULL;
@@ -299,6 +339,11 @@ IOTHUB_CLIENT_LL_HANDLE IoTHubClient_LL_Create(const IOTHUB_CLIENT_CONFIG* confi
     {
         result = NULL;
         LogError("invalid sharedAccessKeyForSASToken (NULL detected)\r\n");
+    }
+    else if (config->sharedAccessKeyNameForSASToken == NULL)
+    {
+        result = NULL;
+        LogError("invalid sharedAccessKeyNameForSASToken (NULL detected)\r\n");
     }
     else
     {

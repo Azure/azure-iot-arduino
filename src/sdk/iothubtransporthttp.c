@@ -33,7 +33,8 @@ const char* IOTHUB_CORRELATION_ID = "iothub-correlationid";
 
 /*DEFAULT_GETMINIMUMPOLLINGTIME is the minimum time in seconds allowed between 2 consecutive GET issues to the service (GET=fetch messages)*/
 /*the default is 25 minutes*/
-#define DEFAULT_GETMINIMUMPOLLINGTIME ((unsigned int)25*60) 
+//#define DEFAULT_GETMINIMUMPOLLINGTIME ((unsigned int)25*60) 
+#define DEFAULT_GETMINIMUMPOLLINGTIME ((unsigned int)1)
 
 #define MAXIMUM_MESSAGE_SIZE (255*1024-1)
 #define MAXIMUM_PAYLOAD_OVERHEAD 384
@@ -374,6 +375,7 @@ static bool create_deviceSASObject(HTTPTRANSPORT_HANDLE_DATA* handleData, const 
     bool result;
     /*Codes_SRS_IOTHUBTRANSPORTTHTTP_06_001: [IoTHubTransportHttp_Create shall invoke URL_EncodeString with an argument of device id.]*/
     keyName = URL_EncodeString(config->upperConfig->sharedAccessKeyNameForSASToken);
+
     if (keyName == NULL)
     {
         /*Codes_SRS_IOTHUBTRANSPORTTHTTP_06_002: [If the encode fails then IoTHubTransportHttp_Create shall fail and return NULL.]*/
@@ -387,43 +389,12 @@ static bool create_deviceSASObject(HTTPTRANSPORT_HANDLE_DATA* handleData, const 
         /*Codes_SRS_IOTHUBTRANSPORTTHTTP_06_004: [If the clone fails then IoTHubTransportHttp_Create shall fail and return NULL.]*/
         if (uriResource != NULL)
         {
-            /*Codes_SRS_IOTHUBTRANSPORTTHTTP_06_005: [IoTHubTransportHttp_Create shall invoke STRING_concat with arguments uriResource and the string "/devices/".]*/
-            /*Codes_SRS_IOTHUBTRANSPORTTHTTP_06_006: [If the concat fails then IoTHubTransportHttp_Create shall fail and return NULL.]*/
-            /*Codes_SRS_IOTHUBTRANSPORTTHTTP_06_007: [IoTHubTransportHttp_Create shall invoke STRING_concat_with_STRING with arguments uriResource and keyName.]*/
-            /*Codes_SRS_IOTHUBTRANSPORTTHTTP_06_008: [If the STRING_concat_with_STRING fails then IoTHubTransportHttp_Create shall fail and return NULL.]*/
-            //if ((STRING_concat(uriResource, "/devices/") == 0) &&
-            //    (STRING_concat_with_STRING(uriResource, keyName) == 0))
-            if (STRING_concat_with_STRING(uriResource, keyName) == 0)
+            STRING_HANDLE key = STRING_construct(config->upperConfig->sharedAccessKeyForSASToken);
+            if (key != NULL)
             {
-                /*Codes_SRS_IOTHUBTRANSPORTTHTTP_06_009: [IoTHubTransportHttp_Create shall invoke STRING_construct with an argument of config->upperConfig->deviceKey.]*/
-                /*Codes_SRS_IOTHUBTRANSPORTTHTTP_06_010: [If the STRING_construct fails then IoTHubTransportHttp_Create shall fail and return NULL.]*/
-                // STRING_HANDLE key = STRING_construct(config->upperConfig->deviceKey);
-                STRING_HANDLE key = STRING_construct(config->upperConfig->sharedAccessKeyForSASToken);
-                if (key != NULL)
-                {
-                    /*Codes_SRS_IOTHUBTRANSPORTTHTTP_06_013: [The keyName is shortened to zero length, if that fails then IoTHubTransportHttp_Create shall fail and return NULL.]*/
-                    if (STRING_empty(keyName) != 0)
-                    {
-                        LogError("Unable to form the device key name for the SAS\r\n");
-                        result = false;
-                    }
-                    else
-                    {
-                        /*Codes_SRS_IOTHUBTRANSPORTTHTTP_06_011: [IoTHubTransportHttp_Create shall invoke HTTPAPIEX_SAS_Create with arguments key, uriResource, and zero length keyName.]*/
-                        /*Codes_SRS_IOTHUBTRANSPORTTHTTP_06_012: [If the HTTPAPIEX_SAS_Create fails then IoTHubTransportHttp_Create shall fail and return NULL.]*/
-                        handleData->sasObject = HTTPAPIEX_SAS_Create(key, uriResource, keyName);
-                        LogInfo("key: %s\r\n", STRING_c_str(key));
-                        LogInfo("uriResource: %s\r\n", STRING_c_str(uriResource));
-                        LogInfo("keyName: %s\r\n", STRING_c_str(keyName));
-                        
-                        result = (handleData->sasObject != NULL) ? (true) : (false);
-                    }
-                    STRING_delete(key);
-                }
-                else
-                {
-                    result = false;
-                }
+                handleData->sasObject = HTTPAPIEX_SAS_Create(key, uriResource, keyName);
+                result = (handleData->sasObject != NULL) ? (true) : (false);
+                STRING_delete(key);
             }
             else
             {
@@ -458,6 +429,16 @@ TRANSPORT_HANDLE IoTHubTransportHttp_Create(const IOTHUBTRANSPORT_CONFIG* config
     else if (config->waitingToSend == NULL)
     {
         LogError("invalid arg (waitingToSend is NULL)\r\n");
+        result = NULL;
+    }
+    else if (config->upperConfig->sharedAccessKeyForSASToken == NULL)
+    {
+        LogError("invalid arg (sharedAccessKeyForSASToken is NULL)\r\n");
+        result = NULL;
+    }
+    else if (config->upperConfig->sharedAccessKeyNameForSASToken == NULL)
+    {
+        LogError("invalid arg (sharedAccessKeyNameForSASToken is NULL)\r\n");
         result = NULL;
     }
     else if (config->upperConfig->protocol == NULL)
@@ -1404,8 +1385,12 @@ static void DoMessages(TRANSPORT_HANDLE handle, IOTHUB_CLIENT_LL_HANDLE iotHubCl
         /*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_116: [After client creation, the first GET shall be allowed no matter what the value of GetMinimumPollingTime.] */
         /*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_117: [If time is not available then all calls shall be treated as if they are the first one.] */
         /*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_115: [A GET request that happens earlier than GetMinimumPollingTime shall be ignored.] */
+
+        // so here get_time may not work so we should allow users to specify the polling time.
         time_t timeNow = get_time(NULL);
-        bool isPollingAllowed = handleData->isFirstPoll || (timeNow == (time_t)(-1)) || (get_difftime(timeNow, handleData->lastPollTime) > handleData->getMinimumPollingTime);
+
+        // 0 of polling time means DoMessages can happen anytime users want.
+        bool isPollingAllowed = handleData->isFirstPoll || (timeNow == (time_t)(-1)) || (get_difftime(timeNow, handleData->lastPollTime) >= handleData->getMinimumPollingTime);
         if (isPollingAllowed)
         {
         HTTP_HEADERS_HANDLE responseHTTPHeaders = HTTPHeaders_Alloc();

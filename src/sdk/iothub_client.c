@@ -63,12 +63,12 @@ static void StartWorkerThreadIfNeeded(IOTHUB_CLIENT_INSTANCE* iotHubClientInstan
     }
 }
 
-IOTHUB_CLIENT_HANDLE IoTHubClient_CreateFromConnectionString(const char* connectionString, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
+IOTHUB_CLIENT_HANDLE IoTHubClient_CreateFromConnectionString(const char* iothubOwnerConnectionString, const char* deviceConnectionString, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
 {
     IOTHUB_CLIENT_INSTANCE* result = NULL;
 
     /* Codes_SRS_IOTHUBCLIENT_12_003: [IoTHubClient_CreateFromConnectionString shall verify the input parameter and if it is NULL then return NULL] */
-    if (connectionString == NULL)
+    if ((deviceConnectionString == NULL) || (iothubOwnerConnectionString == NULL))
     {
         LogError("Input parameter is NULL: connectionString\r\n");
     }
@@ -100,7 +100,7 @@ IOTHUB_CLIENT_HANDLE IoTHubClient_CreateFromConnectionString(const char* connect
             else
             {
                 /* Codes_SRS_IOTHUBCLIENT_12_006: [IoTHubClient_CreateFromConnectionString shall instantiate a new IoTHubClient_LL instance by calling IoTHubClient_LL_CreateFromConnectionString and passing the connectionString] */
-                result->IoTHubClientLLHandle = IoTHubClient_LL_CreateFromConnectionString(connectionString, protocol);
+                result->IoTHubClientLLHandle = IoTHubClient_LL_CreateFromConnectionString(iothubOwnerConnectionString, deviceConnectionString, protocol);
                 if (result->IoTHubClientLLHandle == NULL)
                 {
                     /* Codes_SRS_IOTHUBCLIENT_12_010: [If IoTHubClient_LL_CreateFromConnectionString fails then IoTHubClient_CreateFromConnectionString shall do clean - up and return NULL] */
