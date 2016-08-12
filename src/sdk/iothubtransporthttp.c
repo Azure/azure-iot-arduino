@@ -1387,9 +1387,7 @@ static void DoMessages(TRANSPORT_HANDLE handle, IOTHUB_CLIENT_LL_HANDLE iotHubCl
 
         // so here get_time may not work so we should allow users to specify the polling time.
         time_t timeNow = get_time(NULL);
-
-        // 0 of polling time means DoMessages can happen anytime users want.
-        bool isPollingAllowed = handleData->isFirstPoll || (timeNow == (time_t)(-1)) || (get_difftime(timeNow, handleData->lastPollTime) >= handleData->getMinimumPollingTime);
+        bool isPollingAllowed = handleData->isFirstPoll || (timeNow == (time_t)(-1)) || (get_difftime(timeNow, handleData->lastPollTime) > handleData->getMinimumPollingTime);
         if (isPollingAllowed)
         {
         HTTP_HEADERS_HANDLE responseHTTPHeaders = HTTPHeaders_Alloc();
