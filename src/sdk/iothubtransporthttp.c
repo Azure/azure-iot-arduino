@@ -1384,8 +1384,6 @@ static void DoMessages(TRANSPORT_HANDLE handle, IOTHUB_CLIENT_LL_HANDLE iotHubCl
         /*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_116: [After client creation, the first GET shall be allowed no matter what the value of GetMinimumPollingTime.] */
         /*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_117: [If time is not available then all calls shall be treated as if they are the first one.] */
         /*Codes_SRS_IOTHUBTRANSPORTTHTTP_02_115: [A GET request that happens earlier than GetMinimumPollingTime shall be ignored.] */
-
-        // so here get_time may not work so we should allow users to specify the polling time.
         time_t timeNow = get_time(NULL);
         bool isPollingAllowed = handleData->isFirstPoll || (timeNow == (time_t)(-1)) || (get_difftime(timeNow, handleData->lastPollTime) > handleData->getMinimumPollingTime);
         if (isPollingAllowed)
