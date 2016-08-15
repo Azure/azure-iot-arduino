@@ -15,10 +15,14 @@ HTTPSClient* httpsClient = NULL;
 
 HTTPAPI_RESULT HTTPAPI_Init(void)
 {
-    httpsClient = new HTTPSClient(AzureIoTHubClient::sslClient);
-    httpsClient->setTimeout(10000);
-
-    return HTTPAPI_OK;
+    if(AzureIoTHubClient::sslClient != NULL)
+    {
+        httpsClient = new HTTPSClient(AzureIoTHubClient::sslClient);
+        httpsClient->setTimeout(10000);
+        return HTTPAPI_OK;
+    }
+    LogError("HTTPAPI_Init failed. AzureIoTHubClient::sslClient is NULL\n");
+    return HTTPAPI_INIT_FAILED;
 }
 
 void HTTPAPI_Deinit(void)
