@@ -57,7 +57,14 @@ BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size)
         }
         else
         {
-            result->buffer = (unsigned char*)malloc(size);
+            if(!size)
+            {
+                result->buffer = NULL;
+            }
+            else
+            {
+                result->buffer = (unsigned char*)malloc(size);
+            }
             if (result->buffer == NULL)
             {
                 /*Codes_SRS_BUFFER_02_003: [If allocating memory fails, then BUFFER_create shall return NULL.]*/
