@@ -1,7 +1,10 @@
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 language: generic
 env:
   global:
-    - IDE_VERSION=1.6.9
+    - IDE_VERSION=1.6.8
   matrix:
     - BOARD="arduino:samd:arduino_zero_edbg"
     - BOARD="arduino:samd:mkr1000"
@@ -23,6 +26,7 @@ before_install:
     fi
   - if [[ "$BOARD" =~ "esp8266:esp8266:" ]]; then
       arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" --install-boards esp8266:esp8266;
+      arduino --pref "boardsmanager.additional.urls=" --save-prefs;
       arduino --install-library NTPClient;
       arduino --install-library NTPClient;
     fi

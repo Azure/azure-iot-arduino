@@ -17,9 +17,9 @@
 #include <stddef.h>
 #endif
 
-#include "agenttime.h"
-#include "macro_utils.h"
-#include "strings.h"
+#include "azure_c_shared_utility/agenttime.h"
+#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_c_shared_utility/strings.h"
 
 /*Codes_SRS_AGENT_TYPE_SYSTEM_99_001:[ AGENT_TYPE_SYSTEM shall have the following interface]*/
 
@@ -599,7 +599,7 @@ DEFINE_ENUM(AGENT_DATA_TYPES_RESULT, AGENT_DATA_TYPES_RESULT_VALUES);
 
 DEFINE_ENUM(AGENT_DATA_TYPE_TYPE, AGENT_DATA_TYPE_TYPE_VALUES);
 
-typedef struct AGENT_DATA_TYPE_TAG
+struct AGENT_DATA_TYPE_TAG
 {
     AGENT_DATA_TYPE_TYPE type;
     union
@@ -640,7 +640,7 @@ typedef struct AGENT_DATA_TYPE_TAG
         EDM_GEOMETRY_COLLECTION edmGeometryCollection;
         EDM_COMPLEX_TYPE edmComplexType;
     } value;
-}AGENT_DATA_TYPE;
+};
 
 
 extern AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const AGENT_DATA_TYPE* value);

@@ -1,4 +1,4 @@
-// Copyright (c) Arduino. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <time.h>
@@ -8,13 +8,35 @@
 
 Client* AzureIoTHubClient::sslClient = NULL;
 
-AzureIoTHubClient::AzureIoTHubClient(Client& sslClient)
+AzureIoTHubClient::AzureIoTHubClient()
+{
+    //...
+}
+
+AzureIoTHubClient::AzureIoTHubClient(const AzureIoTHubClient& src)
+{
+    AzureIoTHubClient::sslClient = src.sslClient;
+}
+
+AzureIoTHubClient& AzureIoTHubClient::operator=(const AzureIoTHubClient src)
+{
+    AzureIoTHubClient::sslClient = src.sslClient;
+    return *this;
+}
+
+AzureIoTHubClient::~AzureIoTHubClient()
+{
+    AzureIoTHubClient::sslClient = NULL;
+}
+
+void AzureIoTHubClient::begin(Client& sslClient)
 {
     AzureIoTHubClient::sslClient = &sslClient;
 }
 
-void AzureIoTHubClient::begin()
+void AzureIoTHubClient::end()
 {
+    AzureIoTHubClient::sslClient = NULL;
 }
 
 void AzureIoTHubClient::setEpochTime(unsigned long epochTime)

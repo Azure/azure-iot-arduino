@@ -7,7 +7,7 @@
 #include <crtdbg.h>
 #endif
 #endif
-#include "gballoc.h"
+#include "azure_c_shared_utility/gballoc.h"
 
 #include "schemalib.h"
 #include "codefirst.h"
@@ -15,7 +15,7 @@
 #include "datamarshaller.h"
 #include "datapublisher.h"
 #include <stddef.h>
-#include "iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 #include "iotdevice.h"
 
 #define DEFAULT_CONTAINER_NAME  "Container"
@@ -38,7 +38,7 @@ SERIALIZER_RESULT serializer_init(const char* overrideSchemaNamespace)
     if (g_AgentState != AGENT_NOT_INITIALIZED)
     {
         result = SERIALIZER_ALREADY_INIT;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(SERIALIZER_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(SERIALIZER_RESULT, result));
     }
     else
     {
@@ -48,7 +48,7 @@ SERIALIZER_RESULT serializer_init(const char* overrideSchemaNamespace)
         {
             /* Codes_SRS_SCHEMALIB_99_007:[ On error SERIALIZER_CODEFIRST_INIT_FAILED shall be returned.] */
             result = SERIALIZER_CODEFIRST_INIT_FAILED;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(SERIALIZER_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(SERIALIZER_RESULT, result));
         }
         else
         {

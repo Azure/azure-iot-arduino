@@ -5,7 +5,7 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "gballoc.h"
+#include "azure_c_shared_utility/gballoc.h"
 
 #include "agenttypesystem.h"
 #include <inttypes.h>
@@ -19,18 +19,19 @@
 #include <float.h>
 #include <math.h>
 #include <limits.h>
+#include <errno.h>
 
 /*if ULLONG_MAX is defined by limits.h for whatever reasons... */
 #ifndef ULLONG_MAX
 #define ULLONG_MAX 18446744073709551615
 #endif
 
-#include "crt_abstractions.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
 
 #include "jsonencoder.h"
 #include "multitree.h"
 
-#include "iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 
 #define NaN_STRING "NaN"
 #define MINUSINF_STRING "-INF"
@@ -84,26 +85,54 @@ static void NoFreeFunction(void* value)
 }
 
 
-static const char base64char[64] = { 
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 
-    'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 
-    'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 
-    'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 
-    'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 
-    'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', 
-    '8', '9', '-', '_'
-};
-
-static const char base64b16[16] = { 
-    'A', 'E', 'I', 'M', 'Q', 'U', 'Y', 'c', 'g', 'k', 
-    'o', 's', 'w', '0', '4', '8'
-};
-
-static const char base64b8[4] = {
-    'A' , 'Q' , 'g' , 'w'
-};
-
 #define IS_DIGIT(a) (('0'<=(a)) &&((a)<='9'))
+#define splitInt(intVal, bytePos)   (char)((intVal >> (bytePos << 3)) & 0xFF)
+#define joinChars(a, b, c, d) (uint32_t)( (uint32_t)a + ((uint32_t)b << 8) + ((uint32_t)c << 16) + ((uint32_t)d << 24))
+
+static char base64char(unsigned char val)
+{
+    char result;
+
+    if (val < 26)
+    {
+        result = 'A' + (char)val;
+    }
+    else if (val < 52)
+    {
+        result = 'a' + ((char)val - 26);
+    }
+    else if (val < 62)
+    {
+        result = '0' + ((char)val - 52);
+    }
+    else if (val == 62)
+    {
+        result = '-';
+    }
+    else
+    {
+        result = '_';
+    }
+
+    return result;
+}
+
+static char base64b16(unsigned char val)
+{
+    const uint32_t base64b16values[4] = {
+        joinChars('A', 'E', 'I', 'M'),
+        joinChars('Q', 'U', 'Y', 'c'),
+        joinChars('g', 'k', 'o', 's'),
+        joinChars('w', '0', '4', '8')
+    };
+    return splitInt(base64b16values[val >> 2], (val & 0x03));
+}
+
+static char base64b8(unsigned char val)
+{
+    const uint32_t base64b8values = joinChars('A', 'Q', 'g', 'w');
+    return splitInt(base64b8values, val);
+};
 
 /*creates an AGENT_DATA_TYPE containing a EDM_BOOLEAN from a int*/
 AGENT_DATA_TYPES_RESULT Create_EDM_BOOLEAN_from_int(AGENT_DATA_TYPE* agentData, int v)
@@ -113,7 +142,7 @@ AGENT_DATA_TYPES_RESULT Create_EDM_BOOLEAN_from_int(AGENT_DATA_TYPE* agentData, 
     if(agentData==NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -133,7 +162,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_UINT8(AGENT_DATA_TYPE* agent
     if (agentData == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -204,7 +233,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_EDM_GUID(AGENT_DATA_TYPE* ag
     if (agentData == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("result = %s \r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("result = %s ", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -224,7 +253,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_EDM_BINARY(AGENT_DATA_TYPE* 
     if (agentData == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("result = %s\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("result = %s", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -234,7 +263,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_EDM_BINARY(AGENT_DATA_TYPE* 
             if (v.size != 0)
             {
                 result = AGENT_DATA_TYPES_INVALID_ARG;
-                LogError("result = %s \r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("result = %s ", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
             }
             else
             {
@@ -252,7 +281,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_EDM_BINARY(AGENT_DATA_TYPE* 
                 if ((agentData->value.edmBinary.data = (unsigned char*)malloc(v.size)) == NULL)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("result = %s\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("result = %s", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -265,7 +294,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_EDM_BINARY(AGENT_DATA_TYPE* 
             else
             {
                 result = AGENT_DATA_TYPES_INVALID_ARG;
-                LogError("result = %s\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("result = %s", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
             }
         }
     }
@@ -361,24 +390,16 @@ static void scanOptionalNDigits(const char* source, size_t sourceSize, size_t* p
 /*this function will attempt to read a decimal number having an optional sign(+/-) followed by precisely N digits */
 /*will return 0 if in the string there was a number and that number has been read in the *value parameter*/
 /*will update position parameter to reflect the first character not belonging to the number*/
-static int scanAndReadNDigitsInt(const char* source, size_t sourceSize, size_t* position, int *value, size_t N)
+static int scanAndReadNDigitsInt(const char* source, size_t* position, int *value, size_t N)
 {
     N++;
     *value = 0;
-    while ((*position < sourceSize) &&
+    while ((IS_DIGIT(source[*position])) &&
         (N > 0))
     {
-        if (IS_DIGIT(source[*position]))
-        {
-            *value *= 10;
-            *value += (source[*position] - '0');
-            (*position)++;
-        }
-        else
-        {
-            break;
-        }
-
+        *value *= 10;
+        *value += (source[*position] - '0');
+        (*position)++;
         N--;
     }
 
@@ -566,7 +587,7 @@ static int base64b16toValue(unsigned char source, unsigned char* destination)
     unsigned char i;
     for (i = 0; i <= 15; i++)
     {
-        if (base64b16[i] == source)
+        if (base64b16(i) == source)
         {
             *destination = i;
             return 0;
@@ -581,7 +602,7 @@ static int base64b8toValue(unsigned char source, unsigned char* destination)
     unsigned char i;
     for (i = 0; i <= 3; i++)
     {
-        if (base64b8[i] == source)
+        if (base64b8(i) == source)
         {
             *destination = i;
             return 0;
@@ -660,12 +681,12 @@ AGENT_DATA_TYPES_RESULT Create_EDM_DECIMAL_from_charz(AGENT_DATA_TYPE* agentData
     if (agentData == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else if (v == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -675,7 +696,7 @@ AGENT_DATA_TYPES_RESULT Create_EDM_DECIMAL_from_charz(AGENT_DATA_TYPE* agentData
         {
             /*Codes_SRS_AGENT_TYPE_SYSTEM_99_067:[ If the string indicated by the parameter v does not match exactly an ODATA string representation, AGENT_DATA_TYPES_INVALID_ARG shall be returned.]*/
             result = AGENT_DATA_TYPES_INVALID_ARG;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
         }
         else
         {
@@ -683,12 +704,12 @@ AGENT_DATA_TYPES_RESULT Create_EDM_DECIMAL_from_charz(AGENT_DATA_TYPE* agentData
             {
                 /*Codes_SRS_AGENT_TYPE_SYSTEM_99_067:[ If the string indicated by the parameter v does not match exactly an ODATA string representation, AGENT_DATA_TYPES_INVALID_ARG shall be returned.]*/
                 result = AGENT_DATA_TYPES_INVALID_ARG;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
             }
             else if ((agentData->value.edmDecimal.value = STRING_construct(v)) == NULL)
             {
                 result = AGENT_DATA_TYPES_ERROR;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
             }
             else
             {
@@ -708,7 +729,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_DOUBLE(AGENT_DATA_TYPE* agen
     if(agentData==NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -730,7 +751,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_SINT16(AGENT_DATA_TYPE* agen
     if (agentData == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -749,7 +770,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_SINT32(AGENT_DATA_TYPE* agen
     if (agentData == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -769,7 +790,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_SINT64(AGENT_DATA_TYPE* agen
     if (agentData == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
 
     }
     else
@@ -789,7 +810,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_SINT8(AGENT_DATA_TYPE* agent
     if (agentData == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
 
     }
     else
@@ -931,13 +952,13 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_date(AGENT_DATA_TYPE* agentD
     if (agentData == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     /*ODATA-ABNF: year  = [ "-" ] ( "0" 3DIGIT / oneToNine 3*DIGIT )*/
     else if (ValidateDate(year, month, day) != 0)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -961,7 +982,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_FLOAT(AGENT_DATA_TYPE* agent
     if(agentData==NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -982,12 +1003,12 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_charz(AGENT_DATA_TYPE* agent
     if (agentData == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else if (v == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -996,7 +1017,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_charz(AGENT_DATA_TYPE* agent
         if (mallocAndStrcpy_s(&agentData->value.edmString.chars, v) != 0)
         {
             result = AGENT_DATA_TYPES_ERROR;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
         }
         else
         {
@@ -1015,12 +1036,12 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_charz_no_quotes(AGENT_DATA_T
     if (agentData == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else if (v == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -1029,7 +1050,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_charz_no_quotes(AGENT_DATA_T
         if (mallocAndStrcpy_s(&agentData->value.edmStringNoQuotes.chars, v) != 0)
         {
             result = AGENT_DATA_TYPES_ERROR;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
         }
         else
         {
@@ -1044,7 +1065,7 @@ void Destroy_AGENT_DATA_TYPE(AGENT_DATA_TYPE* agentData)
 {
     if(agentData==NULL)
     {
-        LogError("agentData was NULL.\r\n");
+        LogError("agentData was NULL.");
     }
     else
     {
@@ -1052,12 +1073,12 @@ void Destroy_AGENT_DATA_TYPE(AGENT_DATA_TYPE* agentData)
         {
             default:
             {
-                LogError("invalid agentData\r\n");
+                LogError("invalid agentData");
                 break;
             }
             case(EDM_NO_TYPE):
             {
-                LogError("invalid agentData\r\n");
+                LogError("invalid agentData");
                 break;
             }
             case(EDM_BINARY_TYPE):
@@ -1095,7 +1116,7 @@ void Destroy_AGENT_DATA_TYPE(AGENT_DATA_TYPE* agentData)
             }
             case(EDM_DURATION_TYPE):
             {
-                LogError("EDM_DURATION_TYPE not implemented\r\n");
+                LogError("EDM_DURATION_TYPE not implemented");
                 break;
             }
             case(EDM_GUID_TYPE):
@@ -1125,7 +1146,7 @@ void Destroy_AGENT_DATA_TYPE(AGENT_DATA_TYPE* agentData)
             }
             case(EDM_STREAM):
             {
-                LogError("EDM_STREAM not implemented\r\n");
+                LogError("EDM_STREAM not implemented");
                 break;
             }
             case(EDM_STRING_TYPE):
@@ -1148,87 +1169,87 @@ void Destroy_AGENT_DATA_TYPE(AGENT_DATA_TYPE* agentData)
             }
             case(EDM_TIME_OF_DAY_TYPE) :
             {
-                LogError("EDM_TIME_OF_DAY_TYPE not implemented\r\n");
+                LogError("EDM_TIME_OF_DAY_TYPE not implemented");
                 break;
             }
             case(EDM_GEOGRAPHY_TYPE):
             {
-                LogError("EDM_GEOGRAPHY_TYPE not implemented\r\n");
+                LogError("EDM_GEOGRAPHY_TYPE not implemented");
                 break;
             }
             case(EDM_GEOGRAPHY_POINT_TYPE):
             {
-                LogError("EDM_GEOGRAPHY_POINT_TYPE not implemented\r\n");
+                LogError("EDM_GEOGRAPHY_POINT_TYPE not implemented");
                 break;
             }
             case(EDM_GEOGRAPHY_LINE_STRING_TYPE):
             {
-                LogError("EDM_GEOGRAPHY_LINE_STRING_TYPE not implemented\r\n");
+                LogError("EDM_GEOGRAPHY_LINE_STRING_TYPE not implemented");
                 break;
             }
             case(EDM_GEOGRAPHY_POLYGON_TYPE):
             {
-                LogError("EDM_GEOGRAPHY_POLYGON_TYPE not implemented\r\n");
+                LogError("EDM_GEOGRAPHY_POLYGON_TYPE not implemented");
                 break;
             }
             case(EDM_GEOGRAPHY_MULTI_POINT_TYPE):
             {
-                LogError("EDM_GEOGRAPHY_MULTI_POINT_TYPE not implemented\r\n");
+                LogError("EDM_GEOGRAPHY_MULTI_POINT_TYPE not implemented");
                 break;
             }
             case(EDM_GEOGRAPHY_MULTI_LINE_STRING_TYPE):
             {
-                LogError("EDM_GEOGRAPHY_MULTI_LINE_STRING_TYPE not implemented\r\n");
+                LogError("EDM_GEOGRAPHY_MULTI_LINE_STRING_TYPE not implemented");
                 break;
             }
             case(EDM_GEOGRAPHY_MULTI_POLYGON_TYPE):
             {
-                LogError("EDM_GEOGRAPHY_MULTI_POLYGON_TYPE\r\n");
+                LogError("EDM_GEOGRAPHY_MULTI_POLYGON_TYPE");
                 break;
             }
             case(EDM_GEOGRAPHY_COLLECTION_TYPE):
             {
-                LogError("EDM_GEOGRAPHY_COLLECTION_TYPE not implemented\r\n");
+                LogError("EDM_GEOGRAPHY_COLLECTION_TYPE not implemented");
                 break;
             }
             case(EDM_GEOMETRY_TYPE):
             {
-                LogError("EDM_GEOMETRY_TYPE not implemented\r\n");
+                LogError("EDM_GEOMETRY_TYPE not implemented");
                 break;
             }
             case(EDM_GEOMETRY_POINT_TYPE):
             {
-                LogError("EDM_GEOMETRY_POINT_TYPE not implemented\r\n");
+                LogError("EDM_GEOMETRY_POINT_TYPE not implemented");
                 break;
             }
             case(EDM_GEOMETRY_LINE_STRING_TYPE):
             {
-                LogError("EDM_GEOMETRY_LINE_STRING_TYPE not implemented\r\n");
+                LogError("EDM_GEOMETRY_LINE_STRING_TYPE not implemented");
                 break;
             }
             case(EDM_GEOMETRY_POLYGON_TYPE):
             {
-                LogError("EDM_GEOMETRY_POLYGON_TYPE not implemented\r\n");
+                LogError("EDM_GEOMETRY_POLYGON_TYPE not implemented");
                 break;
             }
             case(EDM_GEOMETRY_MULTI_POINT_TYPE):
             {
-                LogError("EDM_GEOMETRY_MULTI_POINT_TYPE not implemented\r\n");
+                LogError("EDM_GEOMETRY_MULTI_POINT_TYPE not implemented");
                 break;
             }
             case(EDM_GEOMETRY_MULTI_LINE_STRING_TYPE):
             {
-                LogError("EDM_GEOMETRY_MULTI_LINE_STRING_TYPE not implemented\r\n");
+                LogError("EDM_GEOMETRY_MULTI_LINE_STRING_TYPE not implemented");
                 break;
             }
             case(EDM_GEOMETRY_MULTI_POLYGON_TYPE):
             {
-                LogError("EDM_GEOMETRY_MULTI_POLYGON_TYPE not implemented\r\n");
+                LogError("EDM_GEOMETRY_MULTI_POLYGON_TYPE not implemented");
                 break;
             }
             case(EDM_GEOMETRY_COLLECTION_TYPE):
             {
-                LogError("EDM_GEOMETRY_COLLECTION_TYPE not implemented\r\n");
+                LogError("EDM_GEOMETRY_COLLECTION_TYPE not implemented");
                 break;
             }
             case(EDM_SINGLE_TYPE):
@@ -1273,13 +1294,13 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
     if(destination == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     /*Codes_SRS_AGENT_TYPE_SYSTEM_99_053:[ If value is NULL or has been destroyed or otherwise doesn't contain valid data, AGENT_DATA_TYPES_INVALID_ARG shall be returned.]*/
     else if (value == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -1288,7 +1309,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
             default:
             {
                 result = AGENT_DATA_TYPES_INVALID_ARG;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
         case(EDM_NULL_TYPE) :
@@ -1298,7 +1319,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                 {
                     /*Codes_SRS_AGENT_TYPE_SYSTEM_99_016:[ When the value cannot be converted to a string AgentDataTypes_ToString shall return AGENT_DATA_TYPES_ERROR.]*/
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -1317,7 +1338,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                     {
                         /*Codes_SRS_AGENT_TYPE_SYSTEM_99_016:[ When the value cannot be converted to a string AgentDataTypes_ToString shall return AGENT_DATA_TYPES_ERROR.]*/
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
@@ -1333,7 +1354,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                     {
                         /*Codes_SRS_AGENT_TYPE_SYSTEM_99_016:[ When the value cannot be converted to a string AgentDataTypes_ToString shall return AGENT_DATA_TYPES_ERROR.]*/
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
@@ -1345,7 +1366,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                 {
                     /*Codes_SRS_AGENT_TYPE_SYSTEM_99_053:[ If value contains invalid data, AgentDataTypes_ToString shall return AGENT_DATA_TYPES_INVALID_ARG.]*/
                     result = AGENT_DATA_TYPES_INVALID_ARG;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
 
                 break;
@@ -1362,7 +1383,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                 if (STRING_concat(destination, tempbuffer2) != 0)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -1399,7 +1420,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                 if (STRING_concat(destination, tempBuffer2) != 0)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -1439,7 +1460,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                         if (tempBuffer == NULL)
                         {
                             result = AGENT_DATA_TYPES_ERROR;
-                            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                         }
                         else
                         {
@@ -1455,12 +1476,12 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                                 value->value.edmDateTimeOffset.timeZoneMinute) < 0)
                             {
                                 result = AGENT_DATA_TYPES_ERROR;
-                                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                             }
                             else if (STRING_concat(destination, tempBuffer) != 0)
                             {
                                 result = AGENT_DATA_TYPES_ERROR;
-                                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                             }
                             else
                             {
@@ -1495,7 +1516,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                         if (tempBuffer == NULL)
                         {
                             result = AGENT_DATA_TYPES_ERROR;
-                            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                         }
                         else
                         {
@@ -1510,12 +1531,12 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                                 value->value.edmDateTimeOffset.timeZoneMinute) < 0)
                             {
                                 result = AGENT_DATA_TYPES_ERROR;
-                                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                             }
                             else if (STRING_concat(destination, tempBuffer) != 0)
                             {
                                 result = AGENT_DATA_TYPES_ERROR;
-                                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                             }
                             else
                             {
@@ -1553,7 +1574,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                         if (tempBuffer == NULL)
                         {
                             result = AGENT_DATA_TYPES_ERROR;
-                            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                         }
                         else
                         {
@@ -1567,12 +1588,12 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                                 value->value.edmDateTimeOffset.fractionalSecond) < 0)
                             {
                                 result = AGENT_DATA_TYPES_ERROR;
-                                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                             }
                             else if (STRING_concat(destination, tempBuffer) != 0)
                             {
                                 result = AGENT_DATA_TYPES_ERROR;
-                                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                             }
                             else
                             {
@@ -1605,7 +1626,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                         if (tempBuffer == NULL)
                         {
                             result = AGENT_DATA_TYPES_ERROR;
-                            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                         }
                         else
                         {
@@ -1618,12 +1639,12 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                                 value->value.edmDateTimeOffset.dateTime.tm_sec) < 0)
                             {
                                 result = AGENT_DATA_TYPES_ERROR;
-                                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                             }
                             else if (STRING_concat(destination, tempBuffer) != 0)
                             {
                                 result = AGENT_DATA_TYPES_ERROR;
-                                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                             }
                             else
                             {
@@ -1641,7 +1662,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                 if (STRING_concat_with_STRING(destination, value->value.edmDecimal.value) != 0)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -1684,7 +1705,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                 if (STRING_concat(destination, buffertemp2) != 0)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -1727,7 +1748,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                 if (STRING_concat(destination, buffertemp2) != 0)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -1769,7 +1790,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                 if (STRING_concat(destination, buffertemp2) != 0)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -1799,7 +1820,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                 if (STRING_concat(destination, tempbuffer2) != 0)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -1841,7 +1862,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                 if (i < vlen)
                 {
                     result = AGENT_DATA_TYPES_INVALID_ARG; /*don't handle those who do not copy bit by bit to UTF8*/
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -1851,7 +1872,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                     if (tempBuffer == NULL)
                     {
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
@@ -1899,7 +1920,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                         if (STRING_concat(destination, tempBuffer) != 0)
                         {
                             result = AGENT_DATA_TYPES_ERROR;
-                            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                         }
                         else
                         {
@@ -1921,7 +1942,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                 if (STRING_concat(destination, value->value.edmStringNoQuotes.chars) != 0)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -1944,7 +1965,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                     if (STRING_concat(destination, NaN_STRING) != 0)
                     {
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
@@ -1956,7 +1977,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                     if (STRING_concat(destination, MINUSINF_STRING) != 0)
                     {
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
@@ -1968,7 +1989,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                     if (STRING_concat(destination, PLUSINF_STRING) != 0)
                     {
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
@@ -1982,19 +2003,19 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                     if (tempBuffer == NULL)
                     {
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
                         if (sprintf_s(tempBuffer, tempBufferSize, "%.*f", FLT_DIG, (double)(value->value.edmSingle.value)) < 0)
                         {
                             result = AGENT_DATA_TYPES_ERROR;
-                            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                         }
                         else if (STRING_concat(destination, tempBuffer) != 0)
                         {
                             result = AGENT_DATA_TYPES_ERROR;
-                            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                         }
                         else
                         {
@@ -2019,7 +2040,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                     if (STRING_concat(destination, NaN_STRING) != 0)
                     {
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
@@ -2032,7 +2053,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                     if (STRING_concat(destination, MINUSINF_STRING) != 0)
                     {
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
@@ -2045,7 +2066,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                     if (STRING_concat(destination, PLUSINF_STRING) != 0)
                     {
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
@@ -2060,19 +2081,19 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                     if (tempBuffer == NULL)
                     {
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
                         if (sprintf_s(tempBuffer, tempBufferSize, "%.*f", DBL_DIG, value->value.edmDouble.value) < 0)
                         {
                             result = AGENT_DATA_TYPES_ERROR;
-                            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                         }
                         else if (STRING_concat(destination, tempBuffer) != 0)
                         {
                             result = AGENT_DATA_TYPES_ERROR;
-                            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                         }
                         else
                         {
@@ -2098,7 +2119,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                 if (treeHandle == NULL)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -2109,7 +2130,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                         {
                             /*SRS_AGENT_TYPE_SYSTEM_99_016:[ When the value cannot be converted to a string AgentDataTypes_ToString shall return AGENT_DATA_TYPES_ERROR.]*/
                             result = AGENT_DATA_TYPES_ERROR;
-                            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                             break;
                         }
                         else
@@ -2124,7 +2145,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                             if (JSONEncoder_EncodeTree(treeHandle, destination, (JSON_ENCODER_TOSTRING_FUNC)AgentDataTypes_ToString) != JSON_ENCODER_OK)
                             {
                                 result = AGENT_DATA_TYPES_ERROR;
-                                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                             }
                             else
                             {
@@ -2189,7 +2210,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                 if (STRING_concat(destination, tempBuffer2) != 0)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -2227,18 +2248,18 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                     temp[destinationPointer++] = '"';
                     while (value->value.edmBinary.size - currentPosition >= 3)
                     {
-                        char c1 = base64char[value->value.edmBinary.data[currentPosition] >> 2];
-                        char c2 = base64char[
+                        char c1 = base64char(value->value.edmBinary.data[currentPosition] >> 2);
+                        char c2 = base64char(
                             ((value->value.edmBinary.data[currentPosition] & 3) << 4) |
                                 (value->value.edmBinary.data[currentPosition + 1] >> 4)
-                        ];
-                        char c3 = base64char[
+                        );
+                        char c3 = base64char(
                             ((value->value.edmBinary.data[currentPosition + 1] & 0x0F) << 2) |
                                 ((value->value.edmBinary.data[currentPosition + 2] >> 6) & 3)
-                        ];
-                        char c4 = base64char[
+                        );
+                        char c4 = base64char(
                             value->value.edmBinary.data[currentPosition + 2] & 0x3F
-                        ];
+                        );
                         currentPosition += 3;
                         temp[destinationPointer++] = c1;
                         temp[destinationPointer++] = c2;
@@ -2248,12 +2269,12 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                     }
                     if (value->value.edmBinary.size - currentPosition == 2)
                     {
-                        char c1 = base64char[value->value.edmBinary.data[currentPosition] >> 2];
-                        char c2 = base64char[
+                        char c1 = base64char(value->value.edmBinary.data[currentPosition] >> 2);
+                        char c2 = base64char(
                             ((value->value.edmBinary.data[currentPosition] & 0x03) << 4) |
                                 (value->value.edmBinary.data[currentPosition + 1] >> 4)
-                        ];
-                        char c3 = base64b16[value->value.edmBinary.data[currentPosition + 1] & 0x0F];
+                        );
+                        char c3 = base64b16(value->value.edmBinary.data[currentPosition + 1] & 0x0F);
                         temp[destinationPointer++] = c1;
                         temp[destinationPointer++] = c2;
                         temp[destinationPointer++] = c3;
@@ -2261,8 +2282,8 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                     }
                     else if (value->value.edmBinary.size - currentPosition == 1)
                     {
-                        char c1 = base64char[value->value.edmBinary.data[currentPosition] >> 2];
-                        char c2 = base64b8[value->value.edmBinary.data[currentPosition] & 0x03];
+                        char c1 = base64char(value->value.edmBinary.data[currentPosition] >> 2);
+                        char c2 = base64b8(value->value.edmBinary.data[currentPosition] & 0x03);
                         temp[destinationPointer++] = c1;
                         temp[destinationPointer++] = c2;
                         temp[destinationPointer++] = '=';
@@ -2277,7 +2298,7 @@ AGENT_DATA_TYPES_RESULT AgentDataTypes_ToString(STRING_HANDLE destination, const
                     if (STRING_concat(destination, temp) != 0)
                     {
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
@@ -2366,7 +2387,7 @@ AGENT_DATA_TYPES_RESULT Create_NULL_AGENT_DATA_TYPE(AGENT_DATA_TYPE* agentData)
     if (agentData == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -2383,7 +2404,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_AGENT_DATA_TYPE(AGENT_DATA_T
     if ((dest == NULL) || (src == NULL))
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -2392,7 +2413,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_AGENT_DATA_TYPE(AGENT_DATA_T
             default:
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_NO_TYPE) :
@@ -2435,7 +2456,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_AGENT_DATA_TYPE(AGENT_DATA_T
                 if ((dest->value.edmDecimal.value = STRING_clone(src->value.edmDecimal.value)) == NULL)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -2455,7 +2476,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_AGENT_DATA_TYPE(AGENT_DATA_T
             case(EDM_DURATION_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_GUID_TYPE) :
@@ -2528,7 +2549,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_AGENT_DATA_TYPE(AGENT_DATA_T
             case(EDM_STREAM) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             } /*not supported, because what is stream?*/
             case(EDM_STRING_TYPE) :
@@ -2538,7 +2559,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_AGENT_DATA_TYPE(AGENT_DATA_T
                 if (mallocAndStrcpy_s((char**)&(dest->value.edmString.chars), (char*)src->value.edmString.chars) != 0)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -2554,7 +2575,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_AGENT_DATA_TYPE(AGENT_DATA_T
                 if (mallocAndStrcpy_s((char**)&(dest->value.edmStringNoQuotes.chars), (char*)src->value.edmStringNoQuotes.chars) != 0)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -2566,103 +2587,103 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_AGENT_DATA_TYPE(AGENT_DATA_T
             case(EDM_TIME_OF_DAY_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_GEOGRAPHY_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             } /*not supported because what is "abstract base type"*/
             case(EDM_GEOGRAPHY_POINT_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_GEOGRAPHY_LINE_STRING_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_GEOGRAPHY_POLYGON_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_GEOGRAPHY_MULTI_POINT_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_GEOGRAPHY_MULTI_LINE_STRING_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_GEOGRAPHY_MULTI_POLYGON_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_GEOGRAPHY_COLLECTION_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_GEOMETRY_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             } /*not supported because what is "abstract base type"*/
             case(EDM_GEOMETRY_POINT_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_GEOMETRY_LINE_STRING_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_GEOMETRY_POLYGON_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_GEOMETRY_MULTI_POINT_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_GEOMETRY_MULTI_LINE_STRING_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_GEOMETRY_MULTI_POLYGON_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_GEOMETRY_COLLECTION_TYPE) :
             {
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
             }
             case(EDM_COMPLEX_TYPE_TYPE) :
@@ -2674,7 +2695,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_AGENT_DATA_TYPE(AGENT_DATA_T
                 {
                     /*error*/
                     result = AGENT_DATA_TYPES_INVALID_ARG;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -2683,7 +2704,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_AGENT_DATA_TYPE(AGENT_DATA_T
                     if (dest->value.edmComplexType.fields == NULL)
                     {
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
@@ -2699,7 +2720,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_AGENT_DATA_TYPE(AGENT_DATA_T
                             if (mallocAndStrcpy_s((char**)(&(dest->value.edmComplexType.fields[i].fieldName)), src->value.edmComplexType.fields[i].fieldName) != 0)
                             {
                                 result = AGENT_DATA_TYPES_ERROR;
-                                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                                 break;
                             }
                             else
@@ -2710,7 +2731,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_AGENT_DATA_TYPE(AGENT_DATA_T
                                 if (dest->value.edmComplexType.fields[i].value == NULL)
                                 {
                                     result = AGENT_DATA_TYPES_ERROR;
-                                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                                     break;
                                 }
                                 else
@@ -2718,7 +2739,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_AGENT_DATA_TYPE(AGENT_DATA_T
                                     if (Create_AGENT_DATA_TYPE_from_AGENT_DATA_TYPE(dest->value.edmComplexType.fields[i].value, src->value.edmComplexType.fields[i].value) != AGENT_DATA_TYPES_OK)
                                     {
                                         result = AGENT_DATA_TYPES_ERROR;
-                                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                                         break;
                                     }
                                     else
@@ -2757,7 +2778,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_MemberPointers(AGENT_DATA_TY
     if (memberPointerValues == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result: AGENT_DATA_TYPES_INVALID_ARG)\r\n");
+        LogError("(result: AGENT_DATA_TYPES_INVALID_ARG)");
     }
     else
     {
@@ -2765,7 +2786,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_MemberPointers(AGENT_DATA_TY
         if (values == NULL)
         {
             result = AGENT_DATA_TYPES_ERROR;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
         }
         else
         {
@@ -2786,7 +2807,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_MemberPointers(AGENT_DATA_TY
             if (i != nMembers)
             {
                 result = AGENT_DATA_TYPES_ERROR;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
             }
             else
             {
@@ -2794,7 +2815,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_MemberPointers(AGENT_DATA_TY
                 result = Create_AGENT_DATA_TYPE_from_Members(agentData, typeName, nMembers, memberNames, values);
                 if (result != AGENT_DATA_TYPES_OK)
                 {
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 for (i = 0; i < nMembers; i++)
                 {
@@ -2815,43 +2836,43 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_Members(AGENT_DATA_TYPE* age
     if (agentData == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result: AGENT_DATA_TYPES_INVALID_ARG)\r\n");
+        LogError("(result: AGENT_DATA_TYPES_INVALID_ARG)");
     }
     /*Codes_SRS_AGENT_TYPE_SYSTEM_99_055:[ If typeName is NULL, the function shall return AGENT_DATA_TYPES_INVALID_ARG .]*/
     else if (typeName==NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result: AGENT_DATA_TYPES_INVALID_ARG)\r\n");
+        LogError("(result: AGENT_DATA_TYPES_INVALID_ARG)");
     }
     /*Codes_SRS_AGENT_TYPE_SYSTEM_99_056:[If nMembers is 0, the function shall return AGENT_DATA_TYPES_INVALID_ARG .]*/
     else if (nMembers == 0)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     /*Codes_SRS_AGENT_TYPE_SYSTEM_99_057:[ If memberNames is NULL, the function shall return AGENT_DATA_TYPES_INVALID_ARG .]*/
     else if (memberNames == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     /*Codes_SRS_AGENT_TYPE_SYSTEM_99_058:[ If any of the memberNames[i] is NULL, the function shall return AGENT_DATA_TYPES_INVALID_ARG .]*/
     else if (isOneNameNULL(nMembers, memberNames)!=0)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     /*Codes_SRS_AGENT_TYPE_SYSTEM_99_059:[ If memberValues is NULL, the function shall return AGENT_DATA_TYPES_INVALID_ARG .]*/
     else if (memberValues == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     /*Codes_SRS_AGENT_TYPE_SYSTEM_99_063:[ If there are two memberNames with the same name, then the function shall return  AGENT_DATA_TYPES_INVALID_ARG.]*/
     else if (areThereTwoSameNames(nMembers, memberNames) != 0)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -2860,7 +2881,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_Members(AGENT_DATA_TYPE* age
         if (agentData->value.edmComplexType.fields == NULL)
         {
             result = AGENT_DATA_TYPES_ERROR;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
         }
         else
         {
@@ -2879,7 +2900,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_Members(AGENT_DATA_TYPE* age
                 if (mallocAndStrcpy_s((char**)(&(agentData->value.edmComplexType.fields[i].fieldName)), memberNames[i]) != 0)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     break;
                 }
                 else
@@ -2893,7 +2914,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_Members(AGENT_DATA_TYPE* age
                         free((void*)(agentData->value.edmComplexType.fields[i].fieldName));
                         agentData->value.edmComplexType.fields[i].fieldName = NULL;
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                         break;
                     }
                     else
@@ -2902,7 +2923,7 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_Members(AGENT_DATA_TYPE* age
                         if (Create_AGENT_DATA_TYPE_from_AGENT_DATA_TYPE(agentData->value.edmComplexType.fields[i].value, &(memberValues[i])) != AGENT_DATA_TYPES_OK)
                         {
                             result = AGENT_DATA_TYPES_ERROR;
-                            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                             break;
                         }
                         else
@@ -2930,20 +2951,30 @@ AGENT_DATA_TYPES_RESULT Create_AGENT_DATA_TYPE_from_Members(AGENT_DATA_TYPE* age
 
 #define isLeapYear(y) ((((y) % 400) == 0) || (((y)%4==0)&&(!((y)%100==0))))
 
-const int daysInAllPreviousMonths[12] = {
-    0,
-    31,
-    31 + 28,
-    31 + 28 + 31,
-    31 + 28 + 31 + 30,
-    31 + 28 + 31 + 30 + 31,
-    31 + 28 + 31 + 30 + 31 + 30,
-    31 + 28 + 31 + 30 + 31 + 30 + 31,
-    31 + 28 + 31 + 30 + 31 + 30 + 31 + 31,
-    31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30,
-    31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31,
-    31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30
-};
+static int daysInAllPreviousMonths(int month)
+{
+    int result = 0;
+    for (int i = 0; i < month; i++)
+    {
+        switch (i)
+        {
+        case 0:
+        case 2:
+        case 4:
+        case 6:
+        case 7:
+        case 9:
+            result += 31;
+            break;
+        case 1:
+            result += 28;
+            break;
+        default:
+            result += 30;
+        }
+    }
+    return result;
+}
 
 /*this function assumes a correctly filled in tm_year, tm_mon and tm_mday and will fill in tm_yday and tm_wday*/
 static void fill_tm_yday_and_tm_wday(struct tm* source)
@@ -2953,7 +2984,7 @@ static void fill_tm_yday_and_tm_wday(struct tm* source)
     /*1st of Jan is day "0" in a year*/
     int year = source->tm_year + 1900 + 10000;
     int nLeapYearsSinceYearMinus9999 = ((year - 1) / 4) - ((year - 1) / 100) + ((year - 1) / 400);
-    source->tm_yday = (daysInAllPreviousMonths[source->tm_mon]) + (source->tm_mday - 1) + ((source->tm_mon > 1 /*1 is Feb*/) && isLeapYear(year));
+    source->tm_yday = (daysInAllPreviousMonths(source->tm_mon)) + (source->tm_mday - 1) + ((source->tm_mon > 1 /*1 is Feb*/) && isLeapYear(year));
     source->tm_wday = ((365 * year + nLeapYearsSinceYearMinus9999) + source->tm_yday) % 7;
     /*day "0" is 1st jan -9999 (this is how much odata can span*/
     /*the function shall count days */
@@ -2967,74 +2998,131 @@ static int sscanf2d(const char *pos2, int* sec)
     size_t position = 1;
     if (
         (pos2[0] == ':') &&
-        (scanAndReadNDigitsInt(pos2, strlen(pos2), &position, sec, 2) == 0)
+        (scanAndReadNDigitsInt(pos2, &position, sec, 2) == 0)
         )
     {
         result = 1;
     }
     else
     {
-        result = 0;
+        result = EOF;
     }
 
     return result;
     
 }
 
-/*the following function does the same as  (sscanf(pos2, ".%llu", &fractionalSeconds) != 1)*/
-static int sscanfllu(const char*pos2, unsigned long long* fractionalSeconds)
+/*the following function does the same as  sscanf(pos2, "%d", &sec)*/
+/*this function only exists because of optimizing valgrind time, otherwise sscanf would be just as good*/
+static int sscanfd(const char *src, int* dst)
+{
+    char* next;
+    (*dst) = strtol(src, &next, 10);
+    if ((src == next) || ((((*dst) == LONG_MAX) || ((*dst) == LONG_MIN)) && (errno != 0)))
+    {
+        return EOF;
+    }
+    return 1;
+}
+
+/*the following function does the same as  sscanf(src, "%llu", &dst), but, it changes the src pointer.*/
+static int sscanfllu(const char** src, unsigned long long* dst)
+{
+    int result = 1;
+    char* next;
+    (*dst) = strtoull((*src), &next, 10);
+    if (((*src) == (const char*)next) || (((*dst) == ULLONG_MAX) && (errno != 0)))
+    {
+        result = EOF;
+    }
+    (*src) = (const char*)next;
+    return result;
+}
+
+/*the following function does the same as  sscanf(src, ".%llu", &dst)*/
+static int sscanfdotllu(const char*src, unsigned long long* dst)
 {
     int result;
 
-    if (pos2[0] != '.')
+    if ((*src) != '.')
     {
         /*doesn't start with '.' error out*/
-        result = 0;
+        result = EOF;
     }
     else
     {
-        size_t index=1;
-        *fractionalSeconds = 0;
-        bool error = true;
-        while (IS_DIGIT(pos2[index]))
-        {
-            if ((ULLONG_MAX - (pos2[index]-'0'))/10 < *fractionalSeconds)
-            {
-                /*overflow... */
-                error = true;
-                break;
-            }
-            else
-            {
-                *fractionalSeconds = *fractionalSeconds * 10 + (pos2[index] - '0');
-                error = false;
-            }
-            index++;
-        }
+        src++;
+        result = sscanfllu(&src, dst);
+    }
 
-        if (error)
-        {
-            result = 0; /*return 0 fields converted*/
-        }
-        else
-        {
-            result = 1; /*1 field converted*/
-        }
+    return result;
+}
+
+/*the following function does the same as  sscanf(src, "%u", &dst)*/
+static int sscanfu(const char*src, unsigned int* dst)
+{
+    char* next;
+    (*dst) = strtoul(src, &next, 10);
+    int error = errno;
+    if ((src == next) || (((*dst) == ULONG_MAX) && (error != 0)))
+    {
+        return EOF; 
+    }
+    return 1;
+}
+
+/*the following function does the same as  sscanf(src, "%f", &dst)*/
+static int sscanff(const char*src, float* dst)
+{
+    int result = 1;
+    char* next;
+    (*dst) = strtof(src, &next);
+    errno_t error = errno;
+    if ((src == next) || (((*dst) == HUGE_VALF) && (error != 0)))
+    {
+        result = EOF;
     }
     return result;
 }
 
-/*the below function replaces sscanf(pos2, "%03d:%02d\"", &hourOffset, &minOffset)*/
+/*the following function does the same as  sscanf(src, "%lf", &dst)*/
+static int sscanflf(const char*src, double* dst)
+{
+    int result = 1;
+    char* next;
+    (*dst) = strtod(src, &next);
+    errno_t error = errno;
+    if ((src == next) || (((*dst) == HUGE_VALL) && (error != 0)))
+    {
+        result = EOF;
+    }
+    return result;
+}
+
+
+/*the below function replaces sscanf(src, "%03d:%02d\"", &hourOffset, &minOffset)*/
 /*return 2 if success*/
 
-static int sscanf3d2d(const char* pos2, int* hourOffset, int* minOffset)
+static int sscanf3d2d(const char* src, int* hourOffset, int* minOffset)
 {
     size_t position = 0;
-    int result;
+    int result = EOF;
+    bool isNegative = false;
+
+    if (*src == '+')
+    {
+        position++;
+    }
+    else if (*src == '-')
+    {
+        isNegative = true;
+        position++;
+    }
+
     if (
-        (scanAndReadNDigitsInt(pos2, strlen(pos2), &position, hourOffset, 2) == 0) &&
-        (pos2 += position, pos2[0] == ':') &&
-        (scanAndReadNDigitsInt(pos2, strlen(pos2), &position, minOffset, 2) == 0)
+        (scanAndReadNDigitsInt(src, &position, hourOffset, (3-position)) == 0) &&
+        (src[position++] == ':') &&
+        (scanAndReadNDigitsInt(src, &position, minOffset, 2) == 0)
         )
     {
         result = 2;
@@ -3043,6 +3131,9 @@ static int sscanf3d2d(const char* pos2, int* hourOffset, int* minOffset)
     {
         result = 0;
     }
+    if (isNegative)
+        *hourOffset *= -1;
+
     return result;
 }
 
@@ -3057,7 +3148,7 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
         (agentData == NULL))
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
@@ -3068,7 +3159,7 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
             default:
                 /* Codes_SRS_AGENT_TYPE_SYSTEM_99_075:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_NOT_IMPLEMENTED if type is not a supported type.] */
                 result = AGENT_DATA_TYPES_NOT_IMPLEMENTED;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 break;
 
             /* Codes_SRS_AGENT_TYPE_SYSTEM_99_086:[ EDM_STRING] */
@@ -3090,7 +3181,7 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
                 {
                     /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                     result = AGENT_DATA_TYPES_INVALID_ARG;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
 
                 break;
@@ -3106,7 +3197,7 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
                 {
                     /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                     result = AGENT_DATA_TYPES_INVALID_ARG;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
 
                 break;
@@ -3116,13 +3207,13 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
             case EDM_SBYTE_TYPE:
             {
                 int sByteValue;
-                if ((sscanf(source, "%d", &sByteValue) != 1) ||
+                if ((sscanfd(source, &sByteValue) != 1) ||
                     (sByteValue < -128) ||
                     (sByteValue > 127))
                 {
                     /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                     result = AGENT_DATA_TYPES_INVALID_ARG;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -3138,13 +3229,13 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
             case EDM_BYTE_TYPE:
             {
                 int byteValue;
-                if ((sscanf(source, "%d", &byteValue) != 1) ||
+                if ((sscanfd(source, &byteValue) != 1) ||
                     (byteValue < 0) ||
                     (byteValue > 255))
                 {
                     /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                     result = AGENT_DATA_TYPES_INVALID_ARG;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -3160,13 +3251,13 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
             case EDM_INT16_TYPE:
             {
                 int int16Value;
-                if ((sscanf(source, "%d", &int16Value) != 1) ||
+                if ((sscanfd(source, &int16Value) != 1) ||
                     (int16Value < -32768) ||
                     (int16Value > 32767))
                 {
                     /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                     result = AGENT_DATA_TYPES_INVALID_ARG;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -3200,14 +3291,14 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
 
                 strLength = strlen(source);
 
-                if ((sscanf(pos, "%" SCNu32, &uint32Value) != 1) ||
+                if ((sscanfu(pos, &uint32Value) != 1) ||
                     (strLength > 11) ||
                     ((uint32Value > 2147483648UL) && isNegative) ||
                     ((uint32Value > 2147483647UL) && (!isNegative)))
                 {
                     /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                     result = AGENT_DATA_TYPES_INVALID_ARG;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -3257,14 +3348,14 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
 
                 strLength = strlen(source);
 
-                if ((sscanf(pos, "%llu", &ullValue) != 1) ||
+                if ((sscanfllu(&pos, &ullValue) != 1) ||
                     (strLength > 20) ||
                     ((ullValue > 9223372036854775808ULL) && isNegative) ||
                     ((ullValue > 9223372036854775807ULL) && (!isNegative)))
                 {
                     /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                     result = AGENT_DATA_TYPES_INVALID_ARG;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -3301,11 +3392,11 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
 
                 if ((strLength < 2) ||
                     (source[0] != '"') ||
-                    (source[strlen(source) - 1] != '"'))
+                    (source[strLength - 1] != '"'))
                 {
                     /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                     result = AGENT_DATA_TYPES_INVALID_ARG;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -3313,16 +3404,16 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
                     int sign; 
                     scanOptionalMinusSign(source, 2, &pos, &sign);
 
-                    if ((scanAndReadNDigitsInt(source, strLength, &pos, &year, 4) != 0) ||
+                    if ((scanAndReadNDigitsInt(source, &pos, &year, 4) != 0) ||
                         (source[pos++] != '-') ||
-                        (scanAndReadNDigitsInt(source, strLength, &pos, &month, 2) != 0) ||
+                        (scanAndReadNDigitsInt(source, &pos, &month, 2) != 0) ||
                         (source[pos++] != '-') ||
-                        (scanAndReadNDigitsInt(source, strLength, &pos, &day, 2) != 0) ||
+                        (scanAndReadNDigitsInt(source, &pos, &day, 2) != 0) ||
                         (Create_AGENT_DATA_TYPE_from_date(agentData, (int16_t)(sign*year), (uint8_t)month, (uint8_t)day) != AGENT_DATA_TYPES_OK))
                     {
                         /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                         result = AGENT_DATA_TYPES_INVALID_ARG;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
@@ -3355,11 +3446,11 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
 
                 if ((strLength < 2) ||
                     (source[0] != '"') ||
-                    (source[strlen(source) - 1] != '"'))
+                    (source[strLength - 1] != '"'))
                 {
                     /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                     result = AGENT_DATA_TYPES_INVALID_ARG;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -3367,19 +3458,19 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
                     int sign;
                     scanOptionalMinusSign(source, 2, &pos, &sign);
                     
-                    if ((scanAndReadNDigitsInt(source, strLength, &pos, &year, 4) != 0) ||
+                    if ((scanAndReadNDigitsInt(source, &pos, &year, 4) != 0) ||
                         (source[pos++] != '-') ||
-                        (scanAndReadNDigitsInt(source, strLength, &pos, &month, 2) != 0) ||
+                        (scanAndReadNDigitsInt(source, &pos, &month, 2) != 0) ||
                         (source[pos++] != '-') ||
-                        (scanAndReadNDigitsInt(source, strLength, &pos, &day, 2) != 0) ||
+                        (scanAndReadNDigitsInt(source, &pos, &day, 2) != 0) ||
                         (source[pos++] != 'T') ||
-                        (scanAndReadNDigitsInt(source, strLength, &pos, &hour, 2) != 0) ||
+                        (scanAndReadNDigitsInt(source, &pos, &hour, 2) != 0) ||
                         (source[pos++] != ':') ||
-                        (scanAndReadNDigitsInt(source, strLength, &pos, &min, 2) != 0))
+                        (scanAndReadNDigitsInt(source, &pos, &min, 2) != 0))
                     {
                         /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                         result = AGENT_DATA_TYPES_INVALID_ARG;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
@@ -3389,7 +3480,7 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
                         {
                             /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                             result = AGENT_DATA_TYPES_INVALID_ARG;
-                            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                         }
                         else
                         {
@@ -3409,7 +3500,7 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
                             if ((pos2 != NULL) &&
                                 (*pos2 == '.'))
                             {
-                                if (sscanfllu(pos2, &fractionalSeconds) != 1)
+                                if (sscanfdotllu(pos2, &fractionalSeconds) != 1)
                                 {
                                     pos2 = NULL;
                                 }
@@ -3436,14 +3527,14 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
                             {
                                 /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                                 result = AGENT_DATA_TYPES_INVALID_ARG;
-                                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                             }
                             else
                             {
                                 hourOffset = 0;
                                 minOffset = 0;
 
-                                if (sscanf(pos2, "%03d:%02d\"", &hourOffset, &minOffset) == 2)
+                                if (sscanf3d2d(pos2, &hourOffset, &minOffset) == 2)
                                 {
                                     agentData->value.edmDateTimeOffset.hasTimeZone = 1;
                                 }
@@ -3466,7 +3557,7 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
                                     {
                                         /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                                         result = AGENT_DATA_TYPES_INVALID_ARG;
-                                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                                     }
                                     else
                                     {
@@ -3489,7 +3580,7 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
                                 {
                                     /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                                     result = AGENT_DATA_TYPES_INVALID_ARG;
-                                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                                 }
                             }
                         }
@@ -3527,7 +3618,7 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
 #endif
                     result = AGENT_DATA_TYPES_OK;
                 }
-                else if (sscanf(source, "%lf", &agentData->value.edmDouble.value) != 1)
+                else if (sscanflf(source, &(agentData->value.edmDouble.value)) != 1)
                 {
                     /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                     result = AGENT_DATA_TYPES_INVALID_ARG;
@@ -3568,11 +3659,11 @@ AGENT_DATA_TYPES_RESULT CreateAgentDataType_From_String(const char* source, AGEN
 #endif
 result = AGENT_DATA_TYPES_OK;
                 }
-                else if (sscanf(source, "%f", &agentData->value.edmSingle.value) != 1)
+                else if (sscanff(source, &agentData->value.edmSingle.value) != 1)
                 {
                     /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                     result = AGENT_DATA_TYPES_INVALID_ARG;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -3593,7 +3684,7 @@ result = AGENT_DATA_TYPES_OK;
                 {
                     /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                     result = AGENT_DATA_TYPES_INVALID_ARG;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -3603,7 +3694,7 @@ result = AGENT_DATA_TYPES_OK;
                     {
                         /* Codes_SRS_AGENT_TYPE_SYSTEM_99_088:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_ERROR if any other error occurs.] */
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
@@ -3623,7 +3714,7 @@ result = AGENT_DATA_TYPES_OK;
                 {
                     /* Codes_SRS_AGENT_TYPE_SYSTEM_99_087:[ CreateAgentDataType_From_String shall return AGENT_DATA_TYPES_INVALID_ARG if source is not a valid string for a value of type type.] */
                     result = AGENT_DATA_TYPES_INVALID_ARG;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -3631,14 +3722,14 @@ result = AGENT_DATA_TYPES_OK;
                     if ((temp = (char*)malloc(strLength - 1)) == NULL)
                     {
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else if (strncpy_s(temp, strLength - 1, source + 1, strLength - 2) != 0)
                     {
                         free(temp);
 
                         result = AGENT_DATA_TYPES_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                     }
                     else
                     {
@@ -3660,7 +3751,7 @@ result = AGENT_DATA_TYPES_OK;
                 if (mallocAndStrcpy_s(&temp, source) != 0)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {
@@ -3882,14 +3973,14 @@ COMPLEX_TYPE_FIELD_TYPE* AgentDataType_GetComplexTypeField(AGENT_DATA_TYPE* agen
     if (agentData == NULL)
     {
         result = AGENT_DATA_TYPES_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
     }
     else
     {
         if (agentData->type != EDM_COMPLEX_TYPE_TYPE)
         {
             result = AGENT_DATA_TYPES_INVALID_ARG;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
         }
 
         else
@@ -3897,7 +3988,7 @@ COMPLEX_TYPE_FIELD_TYPE* AgentDataType_GetComplexTypeField(AGENT_DATA_TYPE* agen
             if (index >= agentData->value.edmComplexType.nMembers)
             {
                 result = AGENT_DATA_TYPES_INVALID_ARG;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
             }
             else
             {
@@ -3905,7 +3996,7 @@ COMPLEX_TYPE_FIELD_TYPE* AgentDataType_GetComplexTypeField(AGENT_DATA_TYPE* agen
                 if (complexField == NULL)
                 {
                     result = AGENT_DATA_TYPES_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(AGENT_DATA_TYPES_RESULT, result));
                 }
                 else
                 {

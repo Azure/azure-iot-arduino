@@ -1,139 +1,161 @@
-// Copyright (c) Arduino. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-// change the next three lines to use on non-WiFi101 based boards/shields
+
+// Use Arduino IDE 1.6.8 or later.
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <time.h>
+#include <sys/time.h>
+#include <SPI.h>
+#ifdef ARDUINO_ARCH_ESP8266
+// for ESP8266
+#include <ESP8266WiFi.h>
+#include <WiFiClientSecure.h>
+#include <WiFiUdp.h>
+#elif ARDUINO_SAMD_FEATHER_M0
+// for Adafruit WINC1500
+#include <Adafruit_WINC1500.h>
+#include <Adafruit_WINC1500SSLClient.h>
+#include <Adafruit_WINC1500Udp.h>
+#include <NTPClient.h>
+#else
 #include <WiFi101.h>
 #include <WiFiSSLClient.h>
 #include <WiFiUdp.h>
-
-// for ESP8266
-//#include <ESP8266WiFi.h>
-//#include <WiFiClientSecure.h>
-//#include <WiFiUdp.h>
-
-// for Adafruit WINC1500
-//#include <Adafruit_WINC1500.h>
-//#include <Adafruit_WINC1500SSLClient.h>
-//#include <Adafruit_WINC1500Udp.h>
-
-// for the Adafruit WINC1500 we need to create our own WiFi instance
-// // Define the WINC1500 board connections below.
-// #define WINC_CS   8
-// #define WINC_IRQ  7
-// #define WINC_RST  4
-// #define WINC_EN   2     // or, tie EN to VCC
-// // Setup the WINC1500 connection with the pins above and the default hardware SPI.
-// Adafruit_WINC1500 WiFi(WINC_CS, WINC_IRQ, WINC_RST);
-
-// for ESP8266 boards comment the next line
 #include <NTPClient.h>
+#endif
+
+#ifdef ARDUINO_SAMD_FEATHER_M0
+// For the Adafruit WINC1500 we need to create our own WiFi instance
+// Define the WINC1500 board connections below.
+#define WINC_CS   8
+#define WINC_IRQ  7
+#define WINC_RST  4
+#define WINC_EN   2     // or, tie EN to VCC
+// Setup the WINC1500 connection with the pins above and the default hardware SPI.
+Adafruit_WINC1500 WiFi(WINC_CS, WINC_IRQ, WINC_RST);
+#endif
 
 #include <AzureIoTHub.h>
 
 #include "simplesample_http.h"
 
-char ssid[] = "yourNetwork"; //  your network SSID (name)
-char pass[] = "yourPassword";    // your network password (use for WPA, or use as key for WEP)
+static char ssid[] = "yourNetwork";     // your network SSID (name)
+static char pass[] = "yourPassword";    // your network password (use for WPA, or use as key for WEP)
 
-// change the next line to use on non-WiFi101 based boards/shields
-WiFiSSLClient sslClient;
-//WiFiClientSecure sslClient; // for ESP8266
-//Adafruit_WINC1500SSLClient sslClient; // for Adafruit WINC1500
+// In the next line we decide each client ssl we'll use.
+#ifdef ARDUINO_ARCH_ESP8266
+static WiFiClientSecure sslClient; // for ESP8266
+#elif ARDUINO_SAMD_FEATHER_M0
+static Adafruit_WINC1500SSLClient sslClient; // for Adafruit WINC1500
+#else
+static WiFiSSLClient sslClient;
+#endif
 
-AzureIoTHubClient iotHubClient(sslClient);
+static AzureIoTHubClient iotHubClient;
 
 void setup() {
-  initSerial();
-  initWifi();
-  initTime();
+    initSerial();
+    initWifi();
+    initTime();
 
-  iotHubClient.begin();
+    iotHubClient.begin(sslClient);
 }
 
 void loop() {
-  simplesample_http_run();
+    simplesample_http_run();
 }
 
 void initSerial() {
-  //Initialize serial and wait for port to open:
-  // For SAMD boards (e.g. MKR1000, Adafruit WINC1500 based)
-  Serial.begin(9600);
+    //Initialize serial and wait for port to open:
   
-  // Uncomment the next two lines For ESP8266 boards (and comment out the line above)
-  // Serial.begin(115200);
-  // Serial.setDebugOutput(true);
+#ifdef ARDUINO_ARCH_ESP8266
+    // The next two lines For ESP8266 boards
+    Serial.begin(115200);
+    Serial.setDebugOutput(true);
+#else
+    // For SAMD boards (e.g. MKR1000, Adafruit WINC1500 based)
+    Serial.begin(9600);
+#endif
 
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
+    while (!Serial) {
+        ; // wait for serial port to connect. Needed for native USB port only
+    }
 }
 
 void initWifi() {
-  // for the Adafruit WINC1500 we need to enable the chip
-  //pinMode(WINC_EN, OUTPUT);
-  //digitalWrite(WINC_EN, HIGH);
+#ifdef ARDUINO_SAMD_FEATHER_M0
+    // for the Adafruit WINC1500 we need to enable the chip
+    pinMode(WINC_EN, OUTPUT);
+    digitalWrite(WINC_EN, HIGH);
+#endif
 
-  // check for the presence of the shield :
-  if (WiFi.status() == WL_NO_SHIELD) {
-    Serial.println("WiFi shield not present");
-    // don't continue:
-    while (true);
-  }
+    // check for the presence of the shield :
+    if (WiFi.status() == WL_NO_SHIELD) {
+        Serial.println("WiFi shield not present");
+        // don't continue:
+        while (true);
+    }
 
-  // attempt to connect to Wifi network:
-  Serial.print("Attempting to connect to SSID: ");
-  Serial.println(ssid);
+    // attempt to connect to Wifi network:
+    Serial.print("Attempting to connect to SSID: ");
+    Serial.println(ssid);
 
-  // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-  while (WiFi.begin(ssid, pass) != WL_CONNECTED) {
-    // unsuccessful, retry in 4 seconds
-    Serial.print("failed ... ");
-    delay(4000);
-    Serial.print("retrying ... ");
-  }
+    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
+    while (WiFi.begin(ssid, pass) != WL_CONNECTED) {
+        // unsuccessful, retry in 4 seconds
+        Serial.print("failed ... ");
+        delay(4000);
+        Serial.print("retrying ... ");
+    }
 
-  Serial.println("Connected to wifi");
+    Serial.println("Connected to wifi");
 }
 
 void initTime() {
-  // change the next line to use on non-WiFi101, for ESP8266 boards see comment below
-  WiFiUDP ntpUdp;
-  //Adafruit_WINC1500UDP ntpUdp; // for Adafruit WINC1500
-  NTPClient ntpClient(ntpUdp);
+#if defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000) || defined(ARDUINO_SAMD_FEATHER_M0)
+#ifdef ARDUINO_SAMD_FEATHER_M0
+    Adafruit_WINC1500UDP ntpUdp; // for Adafruit WINC1500
+#else
+    WiFiUDP ntpUdp;
+#endif
+    NTPClient ntpClient(ntpUdp);
 
-  ntpClient.begin();
+    ntpClient.begin();
 
-  while (!ntpClient.update()) {
-    Serial.println("Fetching NTP epoch time failed! Waiting 5 seconds to retry.");
-    delay(5000);
-  }
+    while (!ntpClient.update()) {
+        Serial.println("Fetching NTP epoch time failed! Waiting 5 seconds to retry.");
+        delay(5000);
+    }
 
-  ntpClient.end();
+    ntpClient.end();
 
-  unsigned long epochTime = ntpClient.getEpochTime();
+    unsigned long epochTime = ntpClient.getEpochTime();
 
-  Serial.print("Fetched NTP epoch time is: ");
-  Serial.println(epochTime);
+    Serial.print("Fetched NTP epoch time is: ");
+    Serial.println(epochTime);
 
-  iotHubClient.setEpochTime(epochTime);
-  
-  // For ESP8266 boards comment out the above portion of the function and un-comment
-  // the remainder below.
-  
-  // time_t epochTime;
+    iotHubClient.setEpochTime(epochTime);
 
-  // configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+#elif ARDUINO_ARCH_ESP8266
+    time_t epochTime;
 
-  // while (true) {
-  //     epochTime = time(NULL);
+    configTime(0, 0, "pool.ntp.org", "time.nist.gov");
 
-  //     if (epochTime == 0) {
-  //         Serial.println("Fetching NTP epoch time failed! Waiting 2 seconds to retry.");
-  //         delay(2000);
-  //     } else {
-  //         Serial.print("Fetched NTP epoch time is: ");
-  //         Serial.println(epochTime);
-  //         break;
-  //     }
-  // }
+    while (true) {
+        epochTime = time(NULL);
+
+        if (epochTime == 0) {
+            Serial.println("Fetching NTP epoch time failed! Waiting 2 seconds to retry.");
+            delay(2000);
+        } else {
+            Serial.print("Fetched NTP epoch time is: ");
+            Serial.println(epochTime);
+            break;
+        }
+    }
+#endif
 }
