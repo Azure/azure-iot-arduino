@@ -39,7 +39,7 @@ extern "C"
     * @return	A non-NULL @c IOTHUB_CLIENT_HANDLE value that is used when
     * 			invoking other functions for IoT Hub client and @c NULL on failure.
     */
-    extern IOTHUB_CLIENT_HANDLE IoTHubClient_CreateFromConnectionString(const char* connectionString, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol);
+    IOTHUB_CLIENT_HANDLE IoTHubClient_CreateFromConnectionString(const char* iothubOwnerConnectionString, const char* deviceConnectionString, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol);
 
     /**
     * @brief	Creates a IoT Hub client for communication with an existing IoT

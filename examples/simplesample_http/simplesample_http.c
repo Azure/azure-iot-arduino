@@ -14,7 +14,8 @@ and removing calls to _DoWork will yield the same results. */
 #include "AzureIoTHub.h"
 #include "iot_logging.h"
 
-static const char* connectionString = "HostName=[host].azure-devices.net;DeviceId=[device];SharedAccessKey=[key]";
+static const char* IothubOwnerConnectionString = "HostName=[host].azure-devices.net;DeviceId=[device];SharedAccessKey=[key]";
+static const char* DeviceConnectionString = "HostName=[host].azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=[key]";
 
 // Define the Model
 BEGIN_NAMESPACE(WeatherStation);
@@ -128,7 +129,7 @@ void simplesample_http_run(void)
     }
     else
     {
-        IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle = IoTHubClient_LL_CreateFromConnectionString(connectionString, HTTP_Protocol);
+        IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle = IoTHubClient_LL_CreateFromConnectionString(IothubOwnerConnectionString, DeviceConnectionString, HTTP_Protocol);
         srand((unsigned int)time(NULL));
         int avgWindSpeed = 10;
 

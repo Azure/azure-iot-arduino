@@ -98,6 +98,12 @@ typedef struct IOTHUB_CLIENT_CONFIG_TAG
     *	in the include @c iothubtransporthttp.h */
     IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol;
 
+    /** @brief	SharedAccessKey SAS Token. */
+    const char* sharedAccessKeyForSASToken;
+
+    /** @brief	SharedAccessKeyName for SAS Token. */
+    const char* sharedAccessKeyNameForSASToken;
+
     /** @brief	A string that identifies the device. */
     const char* deviceId;
     
@@ -128,7 +134,7 @@ typedef struct IOTHUB_CLIENT_CONFIG_TAG
  * @return	A non-NULL @c IOTHUB_CLIENT_LL_HANDLE value that is used when
  * 			invoking other functions for IoT Hub client and @c NULL on failure.
  */
-extern IOTHUB_CLIENT_LL_HANDLE IoTHubClient_LL_CreateFromConnectionString(const char* connectionString, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol);
+extern IOTHUB_CLIENT_LL_HANDLE IoTHubClient_LL_CreateFromConnectionString(const char* iothubOwnerConnectionString, const char* deviceConnectionString, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol);
 
 /**
  * @brief	Creates a IoT Hub client for communication with an existing IoT
