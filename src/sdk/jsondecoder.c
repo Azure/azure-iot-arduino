@@ -112,6 +112,8 @@ static JSON_DECODER_RESULT ParseString(PARSER_STATE* parserState, char** stringB
     return result;
 }
 
+#define ISDIGIT(c)      (((c>='0') && (c<='9'))?1:0)
+
 static JSON_DECODER_RESULT ParseNumber(PARSER_STATE* parserState)
 {
     JSON_DECODER_RESULT result = JSON_DECODER_OK;
@@ -126,7 +128,7 @@ static JSON_DECODER_RESULT ParseNumber(PARSER_STATE* parserState)
     while (*(parserState->json) != '\0')
     {
         /* Codes_SRS_JSON_DECODER_99_044:[ Octal and hex forms are not allowed.] */
-        if (isdigit(*(parserState->json)))
+        if (ISDIGIT(*(parserState->json)))
         {
             digitCount++;
             /* simply continue */
@@ -158,7 +160,7 @@ static JSON_DECODER_RESULT ParseNumber(PARSER_STATE* parserState)
             while (*(parserState->json) != '\0')
             {
                 /* Codes_SRS_JSON_DECODER_99_044:[ Octal and hex forms are not allowed.] */
-                if (isdigit(*(parserState->json)))
+                if (ISDIGIT(*(parserState->json)))
                 {
                     digitCount++;
                     /* simply continue */
@@ -195,7 +197,7 @@ static JSON_DECODER_RESULT ParseNumber(PARSER_STATE* parserState)
             while (*(parserState->json) != '\0')
             {
                 /* Codes_SRS_JSON_DECODER_99_044:[ Octal and hex forms are not allowed.] */
-                if (isdigit(*(parserState->json)))
+                if (ISDIGIT(*(parserState->json)))
                 {
                     digitCount++;
                     /* simply continue */
@@ -263,7 +265,7 @@ static JSON_DECODER_RESULT ParseValue(PARSER_STATE* parserState, MULTITREE_HANDL
     }
     else if (
         (
-            isdigit(*(parserState->json))
+            ISDIGIT(*(parserState->json))
         )
         || (*(parserState->json) == '-'))
     {

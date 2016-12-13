@@ -679,6 +679,9 @@ static int parse_device_twin_topic_info(const char* resp_topic, bool* patch_msg,
     return result;
 }
 
+
+#define TOUPPER(c)      (((c>='a') && (c<='z'))?c-'a'+'A':c)
+
 static IOTHUB_IDENTITY_TYPE retrieve_topic_type(const char* topic_resp)
 {
     IOTHUB_IDENTITY_TYPE type;
@@ -710,7 +713,7 @@ static IOTHUB_IDENTITY_TYPE retrieve_topic_type(const char* topic_resp)
                     {
                         break;
                     }
-                    else if (toupper(TOPIC_DEVICE_TWIN_PREFIX[index]) != toupper(topic_resp[index]))
+                    else if (TOUPPER(TOPIC_DEVICE_TWIN_PREFIX[index]) != TOUPPER(topic_resp[index]))
                     {
                         search_device_twin = false;
                     }
@@ -728,7 +731,7 @@ static IOTHUB_IDENTITY_TYPE retrieve_topic_type(const char* topic_resp)
                     {
                         break;
                     }
-                    else if (toupper(TOPIC_DEVICE_METHOD_PREFIX[index]) != toupper(topic_resp[index]))
+                    else if (TOUPPER(TOPIC_DEVICE_METHOD_PREFIX[index]) != TOUPPER(topic_resp[index]))
                     {
                         search_device_method = false;
                     }
