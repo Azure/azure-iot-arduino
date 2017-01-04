@@ -40,7 +40,7 @@ You should have the following ready before beginning with any board:
 1. Install esp8266 board support into your Arduino IDE.
     * Start Arduino and open Preferences window.
     * Enter `http://arduino.esp8266.com/stable/package_esp8266com_index.json` into Additional Board Manager URLs field. You can add multiple URLs, separating them with commas.
-    * Open Boards Manager from Tools > Board menu and install esp8266 platform 2.2.0 or later 
+    * Open Boards Manager from Tools > Board menu and install esp8266 platform 2.3.0 or later 
     * Select your ESP8266 board from Tools > Board menu after installation
     
 2. Open the `simplesample_http` example from the Arduino IDE File->Examples->AzureIoTHub menu.
