@@ -14,6 +14,7 @@
 #include <stddef.h>
 
 #define IsWhiteSpace(A) (((A) == 0x20) || ((A) == 0x09) || ((A) == 0x0A) || ((A) == 0x0D))
+#define ISDIGIT(c)      (((c>='0') && (c<='9'))?1:0)
 
 typedef struct PARSER_STATE_TAG
 {
@@ -111,8 +112,6 @@ static JSON_DECODER_RESULT ParseString(PARSER_STATE* parserState, char** stringB
 
     return result;
 }
-
-#define ISDIGIT(c)      (((c>='0') && (c<='9'))?1:0)
 
 static JSON_DECODER_RESULT ParseNumber(PARSER_STATE* parserState)
 {
