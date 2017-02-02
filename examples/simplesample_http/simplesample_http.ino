@@ -97,9 +97,13 @@ void initWifi() {
 
     // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
     while (WiFi.begin(ssid, pass) != WL_CONNECTED) {
+        delay(5000);
+        //check after an initial time if the status is now connected, if not retry.
+        if(WiFi.status() == WL_CONNECTED) {
+            break;
+        }
         // unsuccessful, retry in 4 seconds
         Serial.print("failed ... ");
-        delay(4000);
         Serial.print("retrying ... ");
     }
 
