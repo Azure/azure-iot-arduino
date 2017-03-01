@@ -46,6 +46,7 @@ before_install:
     }
 install:
   - arduino --install-library "AzureIoTUtility"
+  - arduino --install-library "AzureIoTProtocol_HTTP"
   - ln -s $PWD $HOME/Arduino/libraries/.
 script:
   - buildExampleSketch simplesample_http
