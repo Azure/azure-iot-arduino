@@ -45,6 +45,7 @@ before_install:
       arduino --verbose-build --verify --board $BOARD $EXAMPLE_SKETCH;
     }
 install:
+  - arduino --install-library "AzureIoTUtility"
   - ln -s $PWD $HOME/Arduino/libraries/.
 script:
   - buildExampleSketch simplesample_http
