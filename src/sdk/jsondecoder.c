@@ -1,11 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
 #include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
 
 #include "jsondecoder.h"
 #include <stdio.h>
@@ -14,7 +11,6 @@
 #include <stddef.h>
 
 #define IsWhiteSpace(A) (((A) == 0x20) || ((A) == 0x09) || ((A) == 0x0A) || ((A) == 0x0D))
-#define ISDIGIT(c)      (((c>='0') && (c<='9'))?1:0)
 
 typedef struct PARSER_STATE_TAG
 {

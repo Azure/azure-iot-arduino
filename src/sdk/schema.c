@@ -2,9 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
 #include "azure_c_shared_utility/gballoc.h"
 
 #include "schema.h"
@@ -431,7 +428,7 @@ SCHEMA_HANDLE Schema_GetSchemaByNamespace(const char* schemaNamespace)
     /* Codes_SRS_SCHEMA_99_150: [If the schemaNamespace argument is NULL, Schema_GetSchemaByNamespace shall return NULL.] */
     if (schemaNamespace != NULL)
     {
-        SCHEMA_HANDLE* handle = (SCHEMA_HANDLE*)VECTOR_find_if(g_schemas, (PREDICATE_FUNCTION)SchemaNamespacesMatch, schemaNamespace);
+        SCHEMA_HANDLE* handle = (g_schemas==NULL)?NULL:(SCHEMA_HANDLE*)VECTOR_find_if(g_schemas, (PREDICATE_FUNCTION)SchemaNamespacesMatch, schemaNamespace);
         if (handle != NULL)
         {
             /* Codes_SRS_SCHEMA_99_148: [Schema_GetSchemaByNamespace shall search all active schemas and return the schema with the 
@@ -2435,9 +2432,7 @@ size_t Schema_GetModelModelByIndex_Offset(SCHEMA_MODEL_TYPE_HANDLE modelTypeHand
 {
     size_t result;
     /*Codes_SRS_SCHEMA_02_057: [ If modelTypeHandle is NULL then Schema_GetModelModelByIndex_Offset shall fail and return 0. ]*/
-    if (
-        (modelTypeHandle == NULL)
-        )
+    if (modelTypeHandle == NULL)
     {
         result = 0;
         LogError("error SCHEMA_INVALID_ARG");
@@ -2464,9 +2459,7 @@ size_t Schema_GetModelModelByIndex_Offset(SCHEMA_MODEL_TYPE_HANDLE modelTypeHand
 SCHEMA_MODEL_TYPE_HANDLE Schema_GetModelModelyByIndex(SCHEMA_MODEL_TYPE_HANDLE modelTypeHandle, size_t index)
 {
     SCHEMA_MODEL_TYPE_HANDLE result;
-    if (
-        (modelTypeHandle == NULL) 
-        )
+    if (modelTypeHandle == NULL) 
     {
         /*Codes_SRS_SCHEMA_99_173: [Schema_GetModelModelyByIndex shall return NULL in the cases when it cannot provide the handle.]*/
         result = NULL;

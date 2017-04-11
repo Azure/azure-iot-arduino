@@ -80,11 +80,22 @@ DEFINE_ENUM(IOTHUB_IDENTITY_TYPE, IOTHUB_IDENTITY_TYPE_VALUE);
     IOTHUB_PROCESS_CONTINUE
 DEFINE_ENUM(IOTHUB_PROCESS_ITEM_RESULT, IOTHUB_PROCESS_ITEM_RESULT_VALUE);
 
+#define IOTHUBMESSAGE_DISPOSITION_RESULT_VALUES \
+    IOTHUBMESSAGE_ACCEPTED, \
+    IOTHUBMESSAGE_REJECTED, \
+    IOTHUBMESSAGE_ABANDONED
+
+/** @brief Enumeration returned by the callback which is invoked whenever the
+*		   IoT Hub sends a message to the device.
+*/
+DEFINE_ENUM(IOTHUBMESSAGE_DISPOSITION_RESULT, IOTHUBMESSAGE_DISPOSITION_RESULT_VALUES);
+
 #include "azure_c_shared_utility/agenttime.h"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/doublylinkedlist.h"
 #include "iothub_message.h"
 #include "iothub_transport_ll.h"
+#include "iothub_client_authorization.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -130,6 +141,7 @@ extern "C"
     IOTHUB_CLIENT_CONNECTION_BAD_CREDENTIAL,               \
     IOTHUB_CLIENT_CONNECTION_RETRY_EXPIRED,                \
     IOTHUB_CLIENT_CONNECTION_NO_NETWORK,                   \
+    IOTHUB_CLIENT_CONNECTION_COMMUNICATION_ERROR,          \
     IOTHUB_CLIENT_CONNECTION_OK                            \
 
     /** @brief Enumeration passed in by the IoT Hub when the connection status
@@ -143,16 +155,6 @@ extern "C"
     TRANSPORT_THREADED
 
     DEFINE_ENUM(TRANSPORT_TYPE, TRANSPORT_TYPE_VALUES);
-
-#define IOTHUBMESSAGE_DISPOSITION_RESULT_VALUES \
-    IOTHUBMESSAGE_ACCEPTED, \
-    IOTHUBMESSAGE_REJECTED, \
-    IOTHUBMESSAGE_ABANDONED
-
-    /** @brief Enumeration returned by the callback which is invoked whenever the
-    *		   IoT Hub sends a message to the device.
-    */
-    DEFINE_ENUM(IOTHUBMESSAGE_DISPOSITION_RESULT, IOTHUBMESSAGE_DISPOSITION_RESULT_VALUES);
 
 #define DEVICE_TWIN_UPDATE_STATE_VALUES \
     DEVICE_TWIN_UPDATE_COMPLETE, \
@@ -228,6 +230,7 @@ extern "C"
     {
         const IOTHUB_CLIENT_CONFIG* upperConfig;
         PDLIST_ENTRY waitingToSend;
+        IOTHUB_AUTHORIZATION_HANDLE auth_module_handle;
     };
 
 
@@ -516,7 +519,6 @@ extern "C"
      * @return	IOTHUB_CLIENT_OK upon success or an error code upon failure.
      */
      MOCKABLE_FUNCTION(, IOTHUB_CLIENT_RESULT, IoTHubClient_LL_SetDeviceMethodCallback_Ex, IOTHUB_CLIENT_LL_HANDLE, iotHubClientHandle, IOTHUB_CLIENT_INBOUND_DEVICE_METHOD_CALLBACK, inboundDeviceMethodCallback, void*, userContextCallback);
-
 
      /**
      * @brief	This API responses to a asnyc method callback identified the methodId.

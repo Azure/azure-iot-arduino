@@ -2,9 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
 #include "azure_c_shared_utility/gballoc.h"
 
 #include <time.h>
@@ -14,6 +11,7 @@
 #include "iothub_transport_ll.h"
 #include "iothubtransporthttp.h"
 
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/httpapiexsas.h"
 #include "azure_c_shared_utility/urlencode.h"
 #include "azure_c_shared_utility/xlogging.h"
@@ -75,6 +73,15 @@ typedef struct HTTPTRANSPORT_PERDEVICE_DATA_TAG
     PDLIST_ENTRY waitingToSend;
     DLIST_ENTRY eventConfirmations; /*holds items for event confirmations*/
 } HTTPTRANSPORT_PERDEVICE_DATA;
+
+typedef struct MESSAGE_DISPOSITION_CONTEXT_TAG
+{
+    HTTPTRANSPORT_HANDLE_DATA* handleData;
+    HTTPTRANSPORT_PERDEVICE_DATA* deviceData;
+    char* etagValue;
+} MESSAGE_DISPOSITION_CONTEXT;
+
+DEFINE_ENUM_STRINGS(IOTHUBMESSAGE_DISPOSITION_RESULT, IOTHUBMESSAGE_DISPOSITION_RESULT_VALUES);
 
 static void destroy_eventHTTPrelativePath(HTTPTRANSPORT_PERDEVICE_DATA* handleData)
 {
@@ -862,7 +869,7 @@ static int IoTHubTransportHttp_Subscribe(IOTHUB_DEVICE_HANDLE handle)
     {
         /*Codes_SRS_TRANSPORTMULTITHTTP_17_103: [ If parameter deviceHandle is NULL then IoTHubTransportHttp_Subscribe shall fail and return a non-zero value. ]*/
         LogError("invalid arg passed to IoTHubTransportHttp_Subscribe");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -873,7 +880,7 @@ static int IoTHubTransportHttp_Subscribe(IOTHUB_DEVICE_HANDLE handle)
         {
             /*Codes_SRS_TRANSPORTMULTITHTTP_17_105: [ If the device structure is not found, then this function shall fail and return a non-zero value. ]*/
             LogError("did not find device in transport handle");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -917,7 +924,7 @@ static int IoTHubTransportHttp_Subscribe_DeviceTwin(IOTHUB_DEVICE_HANDLE handle)
 {
     /*Codes_SRS_TRANSPORTMULTITHTTP_02_003: [ IoTHubTransportHttp_Subscribe_DeviceTwin shall return a non-zero value. ]*/
     (void)handle;
-    int result = __LINE__;
+    int result = __FAILURE__;
     LogError("IoTHubTransportHttp_Subscribe_DeviceTwin Not supported");
     return result;
 }
@@ -932,7 +939,7 @@ static void IoTHubTransportHttp_Unsubscribe_DeviceTwin(IOTHUB_DEVICE_HANDLE hand
 static int IoTHubTransportHttp_Subscribe_DeviceMethod(IOTHUB_DEVICE_HANDLE handle)
 {
     (void)handle;
-    int result = __LINE__;
+    int result = __FAILURE__;
     LogError("not implemented (yet)");
     return result;
 }
@@ -951,7 +958,7 @@ static int IoTHubTransportHttp_DeviceMethod_Response(IOTHUB_DEVICE_HANDLE handle
     (void)response_size;
     (void)status_response;
     LogError("not implemented (yet)");
-    return __LINE__;
+    return __FAILURE__;
 }
 
 /*produces a representation of the properties, if they exist*/
@@ -964,7 +971,7 @@ static int concat_Properties(STRING_HANDLE existing, MAP_HANDLE map, size_t* pro
     size_t count;
     if (Map_GetInternals(map, &keys, &values, &count) != MAP_OK)
     {
-        result = __LINE__;
+        result = __FAILURE__;
         LogError("error while Map_GetInternals");
     }
     else
@@ -983,12 +990,12 @@ static int concat_Properties(STRING_HANDLE existing, MAP_HANDLE map, size_t* pro
             if (STRING_concat(existing, ",\"properties\":") != 0)
             {
                 /*go ahead and return it*/
-                result = __LINE__;
+                result = __FAILURE__;
                 LogError("failed STRING_concat");
             }
             else if (appendMapToJSON(existing, keys, values, count) != 0)
             {
-                result = __LINE__;
+                result = __FAILURE__;
                 LogError("unable to append the properties");
             }
             else
@@ -1015,8 +1022,8 @@ static int appendMapToJSON(STRING_HANDLE existing, const char* const* keys, cons
     if (STRING_concat(existing, "{") != 0)
     {
         /*go on and return it*/
-        result = __LINE__;
         LogError("STRING_construct failed");
+        result = __FAILURE__;
     }
     else
     {
@@ -1038,13 +1045,13 @@ static int appendMapToJSON(STRING_HANDLE existing, const char* const* keys, cons
 
         if (i < count)
         {
-            result = __LINE__;
+            result = __FAILURE__;
             /*error, let it go through*/
         }
         else if (STRING_concat(existing, "}") != 0)
         {
-            result = __LINE__;
             LogError("unable to STRING_concat");
+            result = __FAILURE__;
         }
         else
         {
@@ -1651,13 +1658,7 @@ static void DoEvent(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTRANSPORT_PERDEVI
     }
 }
 
-#define ACTION_VALUES \
-    ABANDON, \
-    REJECT, \
-    ACCEPT
-DEFINE_ENUM(ACTION, ACTION_VALUES);
-
-static void abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTRANSPORT_PERDEVICE_DATA* deviceData, const char* ETag, ACTION action)
+static bool abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTRANSPORT_PERDEVICE_DATA* deviceData, const char* ETag, IOTHUBMESSAGE_DISPOSITION_RESULT action)
 {
     /*Codes_SRS_TRANSPORTMULTITHTTP_17_097: [_DoWork shall call HTTPAPIEX_SAS_ExecuteRequest with the following parameters:
     -requestType: POST
@@ -1690,6 +1691,7 @@ static void abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTR
     - responseHeadearsHandle: NULL
     - responseContent: NULL]*/
 
+    bool result;
     STRING_HANDLE fullAbandonRelativePath = STRING_clone(deviceData->abandonHTTPrelativePathBegin);
     if (fullAbandonRelativePath == NULL)
     {
@@ -1697,6 +1699,7 @@ static void abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTR
         /*Codes_SRS_TRANSPORTMULTITHTTP_17_100: [Accepting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
         /*Codes_SRS_TRANSPORTMULTITHTTP_17_102: [Rejecting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
         LogError("unable to STRING_clone");
+        result = false;
     }
     else
     {
@@ -1707,18 +1710,20 @@ static void abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTR
             /*Codes_SRS_TRANSPORTMULTITHTTP_17_100: [Accepting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
             /*Codes_SRS_TRANSPORTMULTITHTTP_17_102: [Rejecting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
             LogError("unable to STRING_construct_n");
+            result = false;
         }
         else
         {
             if (!(
                 (STRING_concat_with_STRING(fullAbandonRelativePath, ETagUnquoted) == 0) &&
-                (STRING_concat(fullAbandonRelativePath, (action == ABANDON) ? "/abandon" API_VERSION : ((action == REJECT) ? API_VERSION "&reject" : API_VERSION)) == 0)
+                (STRING_concat(fullAbandonRelativePath, (action == IOTHUBMESSAGE_ABANDONED) ? "/abandon" API_VERSION : ((action == IOTHUBMESSAGE_REJECTED) ? API_VERSION "&reject" : API_VERSION)) == 0)
                 ))
             {
                 /*Codes_SRS_TRANSPORTMULTITHTTP_17_098: [Abandoning the message is considered successful if the HTTPAPIEX_SAS_ExecuteRequest doesn't fail and the statusCode is 204.]*/
                 /*Codes_SRS_TRANSPORTMULTITHTTP_17_100: [Accepting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
                 /*Codes_SRS_TRANSPORTMULTITHTTP_17_102: [Rejecting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
                 LogError("unable to STRING_concat");
+                result = false;
             }
             else
             {
@@ -1729,6 +1734,7 @@ static void abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTR
                     /*Codes_SRS_TRANSPORTMULTITHTTP_17_100: [Accepting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
                     /*Codes_SRS_TRANSPORTMULTITHTTP_17_102: [Rejecting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
                     LogError("unable to HTTPHeaders_Alloc");
+                    result = false;
                 }
                 else
                 {
@@ -1742,6 +1748,7 @@ static void abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTR
                         /*Codes_SRS_TRANSPORTMULTITHTTP_17_100: [Accepting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
                         /*Codes_SRS_TRANSPORTMULTITHTTP_17_102: [Rejecting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
                         LogError("unable to HTTPHeaders_AddHeaderNameValuePair");
+                        result = false;
                     }
                     else
                     {
@@ -1755,10 +1762,11 @@ static void abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTR
                                 r = HTTPAPIEX_ERROR;
                                 /*Codes_SRS_TRANSPORTMULTITHTTP_03_002: [If the result of the invocation of HTTPHeaders_ReplaceHeaderNameValuePair is NOT HTTP_HEADERS_OK then fallthrough.]*/
                                 LogError("Unable to replace the old SAS Token.");
+                                result = false;
                             }
                             else if ((r = HTTPAPIEX_ExecuteRequest(
                                 handleData->httpApiExHandle,
-                                (action == ABANDON) ? HTTPAPI_REQUEST_POST : HTTPAPI_REQUEST_DELETE,                               /*-requestType: POST                                                                                                       */
+                                (action == IOTHUBMESSAGE_ABANDONED) ? HTTPAPI_REQUEST_POST : HTTPAPI_REQUEST_DELETE,                               /*-requestType: POST                                                                                                       */
                                 STRING_c_str(fullAbandonRelativePath),              /*-relativePath: abandon relative path begin (as created by _Create) + value of ETag + "/abandon?api-version=2016-11-14"   */
                                 abandonRequestHttpHeaders,                          /*- requestHttpHeadersHandle: an HTTP headers instance containing the following                                            */
                                 NULL,                                               /*- requestContent: NULL                                                                                                   */
@@ -1771,12 +1779,13 @@ static void abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTR
                                 /*Codes_SRS_TRANSPORTMULTITHTTP_17_100: [Accepting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
                                 /*Codes_SRS_TRANSPORTMULTITHTTP_17_102: [Rejecting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
                                 LogError("Unable to HTTPAPIEX_ExecuteRequest.");
+                                result = false;
                             }
                         }
                         else if ((r = HTTPAPIEX_SAS_ExecuteRequest(
                             deviceData->sasObject,
                             handleData->httpApiExHandle,
-                            (action == ABANDON) ? HTTPAPI_REQUEST_POST : HTTPAPI_REQUEST_DELETE,                               /*-requestType: POST                                                                                                       */
+                            (action == IOTHUBMESSAGE_ABANDONED) ? HTTPAPI_REQUEST_POST : HTTPAPI_REQUEST_DELETE,                               /*-requestType: POST                                                                                                       */
                             STRING_c_str(fullAbandonRelativePath),              /*-relativePath: abandon relative path begin (as created by _Create) + value of ETag + "/abandon?api-version=2016-11-14"   */
                             abandonRequestHttpHeaders,                          /*- requestHttpHeadersHandle: an HTTP headers instance containing the following                                            */
                             NULL,                                               /*- requestContent: NULL                                                                                                   */
@@ -1789,6 +1798,7 @@ static void abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTR
                             /*Codes_SRS_TRANSPORTMULTITHTTP_17_100: [Accepting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
                             /*Codes_SRS_TRANSPORTMULTITHTTP_17_102: [Rejecting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
                             LogError("unable to HTTPAPIEX_SAS_ExecuteRequest");
+                            result = false;
                         }
                         if (r == HTTPAPIEX_OK)
                         {
@@ -1798,6 +1808,7 @@ static void abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTR
                                 /*Codes_SRS_TRANSPORTMULTITHTTP_17_100: [Accepting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
                                 /*Codes_SRS_TRANSPORTMULTITHTTP_17_102: [Rejecting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
                                 LogError("unexpected status code returned %u (was expecting 204)", statusCode);
+                                result = false;
                             }
                             else
                             {
@@ -1805,7 +1816,12 @@ static void abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTR
                                 /*Codes_SRS_TRANSPORTMULTITHTTP_17_100: [Accepting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
                                 /*Codes_SRS_TRANSPORTMULTITHTTP_17_102: [Rejecting a message is successful when HTTPAPIEX_SAS_ExecuteRequest completes successfully and the status code is 204.] */
                                 /*all is fine*/
+                                result = true;
                             }
+                        }
+                        else
+                        {
+                            result = false;
                         }
                     }
                     HTTPHeaders_Free(abandonRequestHttpHeaders);
@@ -1815,6 +1831,115 @@ static void abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTR
         }
         STRING_delete(fullAbandonRelativePath);
     }
+    return result;
+}
+
+static IOTHUB_CLIENT_RESULT IoTHubTransportHttp_SendMessageDisposition(MESSAGE_CALLBACK_INFO* message_data, IOTHUBMESSAGE_DISPOSITION_RESULT disposition)
+{
+    IOTHUB_CLIENT_RESULT result;
+    if (message_data == NULL)
+    {
+        /* Codes_SRS_TRANSPORTMULTITHTTP_10_001: [If messageData is NULL, IoTHubTransportHttp_SendMessageDisposition shall fail and return IOTHUB_CLIENT_ERROR.] */
+        LogError("invalid argument messageData is NULL");
+        result = IOTHUB_CLIENT_ERROR;
+    }
+    else
+    {
+        if (message_data->messageHandle == NULL)
+        {
+            /* Codes_SRS_TRANSPORTMULTITHTTP_10_002: [If any of the messageData fields are NULL, IoTHubTransportHttp_SendMessageDisposition shall fail and return IOTHUB_CLIENT_ERROR.] */
+            LogError("invalid message handle");
+            result = IOTHUB_CLIENT_ERROR;
+        }
+        else
+        {
+            MESSAGE_DISPOSITION_CONTEXT* tc = (MESSAGE_DISPOSITION_CONTEXT*)(message_data->transportContext);
+            if (tc == NULL)
+            {
+                /* Codes_SRS_TRANSPORTMULTITHTTP_10_002: [If any of the messageData fields are NULL, IoTHubTransportHttp_SendMessageDisposition shall fail and return IOTHUB_CLIENT_ERROR.] */
+                LogError("invalid transport context data");
+                result = IOTHUB_CLIENT_ERROR;
+            }
+            else
+            {
+                if ((tc->handleData == NULL) || (tc->deviceData == NULL) || (tc->etagValue == NULL))
+                {
+                    /* Codes_SRS_TRANSPORTMULTITHTTP_10_002: [If any of the messageData fields are NULL, IoTHubTransportHttp_SendMessageDisposition shall fail and return IOTHUB_CLIENT_ERROR.] */
+                    LogError("invalid transport context data");
+                    result = IOTHUB_CLIENT_ERROR;
+                }
+                else
+                {
+                    if (abandonOrAcceptMessage(tc->handleData, tc->deviceData, tc->etagValue, disposition))
+                    {
+                        result = IOTHUB_CLIENT_OK;
+                    }
+                    else
+                    {
+                        /* Codes_SRS_TRANSPORTMULTITHTTP_10_003: [IoTHubTransportHttp_SendMessageDisposition shall fail and return IOTHUB_CLIENT_ERROR if the POST message fails, otherwise return IOTHUB_CLIENT_OK.] */
+                        LogError("HTTP Transport layer failed to report %s disposition", ENUM_TO_STRING(IOTHUBMESSAGE_DISPOSITION_RESULT, disposition));
+                        result = IOTHUB_CLIENT_ERROR;
+                    }
+                }
+                free(tc->etagValue);
+                free(tc);
+            }
+            IoTHubMessage_Destroy(message_data->messageHandle);
+        }
+        free(message_data);
+    }
+    return result;
+}
+
+static MESSAGE_CALLBACK_INFO* MESSAGE_CALLBACK_INFO_Create(IOTHUB_MESSAGE_HANDLE received_message, HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTRANSPORT_PERDEVICE_DATA* deviceData, const char* etagValue)
+{
+    MESSAGE_CALLBACK_INFO* result = (MESSAGE_CALLBACK_INFO*)malloc(sizeof(MESSAGE_CALLBACK_INFO));
+    if (result == NULL)
+    {
+        /*Codes_SRS_TRANSPORTMULTITHTTP_10_006: [If assembling the transport context fails, _DoWork shall "abandon" the message.] */
+        LogError("malloc failed");
+    }
+    else
+    {
+        MESSAGE_DISPOSITION_CONTEXT* tc = (MESSAGE_DISPOSITION_CONTEXT*)malloc(sizeof(MESSAGE_DISPOSITION_CONTEXT));
+        if (tc == NULL)
+        {
+            /*Codes_SRS_TRANSPORTMULTITHTTP_10_006: [If assembling the transport context fails, _DoWork shall "abandon" the message.] */
+            LogError("malloc failed");
+            free(result);
+            result = NULL;
+        }
+        else
+        {
+            result->messageHandle = IoTHubMessage_Clone(received_message);
+            if (result->messageHandle == NULL)
+            {
+                /*Codes_SRS_TRANSPORTMULTITHTTP_10_007: [If assembling a message clone, _DoWork shall "abandon" the message.]*/
+                LogError("IoTHubMessage_Clone failed");
+                free(tc);
+                free(result);
+                result = NULL;
+            }
+            else
+            {
+                if (mallocAndStrcpy_s(&tc->etagValue, etagValue) != 0)
+                {
+                    LogError("mallocAndStrcpy_s failed");
+                    free(tc);
+                    free(result);
+                    result = NULL;
+                }
+                else
+                {
+                    tc->handleData = handleData;
+                    tc->deviceData = deviceData;
+
+                    result->transportContext = tc;
+                }
+            }
+        }
+    }
+    return result;
 }
 
 static void DoMessages(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTRANSPORT_PERDEVICE_DATA* deviceData, IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle)
@@ -1948,7 +2073,10 @@ static void DoMessages(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTRANSPORT_PERD
                                     {
                                         /*Codes_SRS_TRANSPORTMULTITHTTP_17_092: [If assembling the message fails in any way, then _DoWork shall "abandon" the message.]*/
                                         LogError("unable to IoTHubMessage_CreateFromByteArray, trying to abandon the message... ");
-                                        abandonOrAcceptMessage(handleData, deviceData, etagValue, ABANDON);
+                                        if (!abandonOrAcceptMessage(handleData, deviceData, etagValue, IOTHUBMESSAGE_ABANDONED))
+                                        {
+                                            LogError("HTTP Transport layer failed to report ABANDON disposition");
+                                        }
                                     }
                                     else
                                     {
@@ -1958,7 +2086,10 @@ static void DoMessages(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTRANSPORT_PERD
                                         if (HTTPHeaders_GetHeaderCount(responseHTTPHeaders, &nHeaders) != HTTP_HEADERS_OK)
                                         {
                                             LogError("unable to get the count of HTTP headers");
-                                            abandonOrAcceptMessage(handleData, deviceData, etagValue, ABANDON);
+                                            if (!abandonOrAcceptMessage(handleData, deviceData, etagValue, IOTHUBMESSAGE_ABANDONED))
+                                            {
+                                                LogError("HTTP Transport layer failed to report ABANDON disposition");
+                                            }
                                         }
                                         else
                                         {
@@ -2020,33 +2151,47 @@ static void DoMessages(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTRANSPORT_PERD
 
                                             if (i < nHeaders)
                                             {
-                                                abandonOrAcceptMessage(handleData, deviceData, etagValue, ABANDON);
+                                                if (!abandonOrAcceptMessage(handleData, deviceData, etagValue, IOTHUBMESSAGE_ABANDONED))
+                                                {
+                                                    LogError("HTTP Transport layer failed to report ABANDON disposition");
+                                                }
                                             }
                                             else
                                             {
-                                                /*Codes_SRS_TRANSPORTMULTITHTTP_17_093: [Otherwise, _DoWork shall call IoTHubClient_LL_MessageCallback with parameters handle = iotHubClientHandle and message = newly created message.]*/
-                                                IOTHUBMESSAGE_DISPOSITION_RESULT messageResult = IoTHubClient_LL_MessageCallback(iotHubClientHandle, receivedMessage);
-                                                if (messageResult == IOTHUBMESSAGE_ACCEPTED)
+                                                MESSAGE_CALLBACK_INFO* messageData = MESSAGE_CALLBACK_INFO_Create(receivedMessage, handleData, deviceData, etagValue);
+                                                if (messageData == NULL)
                                                 {
-                                                    /*Codes_SRS_TRANSPORTMULTITHTTP_17_094: [If IoTHubClient_LL_MessageCallback returns IOTHUBMESSAGE_ACCEPTED then _DoWork shall "accept" the message.]*/
-                                                    abandonOrAcceptMessage(handleData, deviceData, etagValue, ACCEPT);
-                                                }
-                                                else if (messageResult == IOTHUBMESSAGE_REJECTED)
-                                                {
-                                                    /*Codes_SRS_TRANSPORTMULTITHTTP_17_095: [If IoTHubClient_LL_MessageCallback returns IOTHUBMESSAGE_REJECTED then _DoWork shall "reject" the message.]*/
-                                                    abandonOrAcceptMessage(handleData, deviceData, etagValue, REJECT);
+                                                    /*Codes_SRS_TRANSPORTMULTITHTTP_10_006: [If assembling the transport context fails, _DoWork shall "abandon" the message.] */
+                                                    LogError("failed to assemble callback info");
+                                                    if (!abandonOrAcceptMessage(handleData, deviceData, etagValue, IOTHUBMESSAGE_ABANDONED))
+                                                    {
+                                                        LogError("HTTP Transport layer failed to report ABANDON disposition");
+                                                    }
                                                 }
                                                 else
                                                 {
-                                                    /*Codes_SRS_TRANSPORTMULTITHTTP_17_096: [If IoTHubClient_LL_MessageCallback returns IOTHUBMESSAGE_ABANDONED then _DoWork shall "abandon" the message.] */
-                                                    abandonOrAcceptMessage(handleData, deviceData, etagValue, ABANDON);
+                                                    bool abandon;
+                                                    if (IoTHubClient_LL_MessageCallback(iotHubClientHandle, messageData))
+                                                    {
+                                                        abandon = false;
+                                                    }
+                                                    else
+                                                    {
+                                                        LogError("IoTHubClient_LL_MessageCallback failed");
+                                                        abandon = true;
+                                                    }
+
+                                                    /*Codes_SRS_TRANSPORTMULTITHTTP_17_096: [If IoTHubClient_LL_MessageCallback returns false then _DoWork shall "abandon" the message.] */
+                                                    if (abandon)
+                                                    {
+                                                        (void)IoTHubTransportHttp_SendMessageDisposition(messageData, IOTHUBMESSAGE_ABANDONED);
+                                                    }
                                                 }
                                             }
                                         }
                                         IoTHubMessage_Destroy(receivedMessage);
                                     }
                                 }
-
                             }
                         }
                     }
@@ -2238,6 +2383,7 @@ static int IoTHubTransportHttp_SetRetryPolicy(TRANSPORT_LL_HANDLE handle, IOTHUB
 /*Codes_SRS_TRANSPORTMULTITHTTP_17_125: [This function shall return a pointer to a structure of type TRANSPORT_PROVIDER having the following values for its fields:] */
 static TRANSPORT_PROVIDER thisTransportProvider =
 {
+    IoTHubTransportHttp_SendMessageDisposition,     /*pfIotHubTransport_SendMessageDisposition IoTHubTransport_SendMessageDisposition;*/
     IoTHubTransportHttp_Subscribe_DeviceMethod,     /*pfIoTHubTransport_Subscribe_DeviceMethod IoTHubTransport_Subscribe_DeviceMethod;*/
     IoTHubTransportHttp_Unsubscribe_DeviceMethod,   /*pfIoTHubTransport_Unsubscribe_DeviceMethod IoTHubTransport_Unsubscribe_DeviceMethod;*/
     IoTHubTransportHttp_DeviceMethod_Response,      /*pfIoTHubTransport_DeviceMethod_Response IoTHubTransport_DeviceMethod_Response;*/

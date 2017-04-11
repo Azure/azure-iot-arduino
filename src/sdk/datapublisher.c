@@ -2,9 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
 #include "azure_c_shared_utility/gballoc.h"
 
 #include <stdbool.h>
@@ -51,9 +48,7 @@ DATA_PUBLISHER_HANDLE DataPublisher_Create(SCHEMA_MODEL_TYPE_HANDLE modelHandle,
     DATA_PUBLISHER_HANDLE_DATA* result;
 
     /* Codes_SRS_DATA_PUBLISHER_99_042:[ If a NULL argument is passed to it, DataPublisher_Create shall return NULL.] */
-    if (
-        (modelHandle == NULL)
-        )
+    if (modelHandle == NULL)
     {
         result = NULL;
         LogError("(result = %s)", ENUM_TO_STRING(DATA_PUBLISHER_RESULT, DATA_PUBLISHER_INVALID_ARG));

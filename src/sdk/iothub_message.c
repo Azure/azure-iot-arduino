@@ -2,9 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/buffer_.h"
@@ -53,7 +51,7 @@ static int ValidateAsciiCharactersFilter(const char* mapKey, const char* mapValu
     int result;
     if (!ContainsOnlyUsAscii(mapKey) || !ContainsOnlyUsAscii(mapValue) )
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -65,105 +63,122 @@ static int ValidateAsciiCharactersFilter(const char* mapKey, const char* mapValu
 IOTHUB_MESSAGE_HANDLE IoTHubMessage_CreateFromByteArray(const unsigned char* byteArray, size_t size)
 {
     IOTHUB_MESSAGE_HANDLE_DATA* result;
-    result = malloc(sizeof(IOTHUB_MESSAGE_HANDLE_DATA));
-    if (result == NULL)
+    if ((byteArray == NULL) && (size != 0))
     {
-        LogError("unable to malloc");
-        /*Codes_SRS_IOTHUBMESSAGE_02_024: [If there are any errors then IoTHubMessage_CreateFromByteArray shall return NULL.] */
-        /*let it go through*/
+        LogError("Invalid argument - byteArray is NULL");
+        result = NULL;
     }
     else
     {
-        const unsigned char* source;
-        unsigned char temp = 0x00;
-        if (size != 0)
+        result = (IOTHUB_MESSAGE_HANDLE_DATA*)malloc(sizeof(IOTHUB_MESSAGE_HANDLE_DATA));
+        if (result == NULL)
         {
-            /*Codes_SRS_IOTHUBMESSAGE_06_002: [If size is NOT zero then byteArray MUST NOT be NULL*/
-            if (byteArray == NULL)
-            {
-                LogError("Attempted to create a Hub Message from a NULL pointer!");
-                free(result);
-                result = NULL;
-                source = NULL;
-            }
-            else
-            {
-                source = byteArray;
-            }
+            LogError("unable to malloc");
+            /*Codes_SRS_IOTHUBMESSAGE_02_024: [If there are any errors then IoTHubMessage_CreateFromByteArray shall return NULL.] */
+            /*let it go through*/
         }
         else
         {
-            /*Codes_SRS_IOTHUBMESSAGE_06_001: [If size is zero then byteArray may be NULL.]*/
-            source = &temp;
-        }
-        if (result != NULL)
-        {
-            /*Codes_SRS_IOTHUBMESSAGE_02_022: [IoTHubMessage_CreateFromByteArray shall call BUFFER_create passing byteArray and size as parameters.] */
-            if ((result->value.byteArray = BUFFER_create(source, size)) == NULL)
+            const unsigned char* source;
+            unsigned char temp = 0x00;
+            if (size != 0)
             {
-                LogError("BUFFER_create failed");
-                /*Codes_SRS_IOTHUBMESSAGE_02_024: [If there are any errors then IoTHubMessage_CreateFromByteArray shall return NULL.] */
-                free(result);
-                result = NULL;
-            }
-            /*Codes_SRS_IOTHUBMESSAGE_02_023: [IoTHubMessage_CreateFromByteArray shall call Map_Create to create the message properties.] */
-            else if ((result->properties = Map_Create(ValidateAsciiCharactersFilter)) == NULL)
-            {
-                LogError("Map_Create failed");
-                /*Codes_SRS_IOTHUBMESSAGE_02_024: [If there are any errors then IoTHubMessage_CreateFromByteArray shall return NULL.] */
-                BUFFER_delete(result->value.byteArray);
-                free(result);
-                result = NULL;
+                /*Codes_SRS_IOTHUBMESSAGE_06_002: [If size is NOT zero then byteArray MUST NOT be NULL*/
+                if (byteArray == NULL)
+                {
+                    LogError("Attempted to create a Hub Message from a NULL pointer!");
+                    free(result);
+                    result = NULL;
+                    source = NULL;
+                }
+                else
+                {
+                    source = byteArray;
+                }
             }
             else
             {
-                /*Codes_SRS_IOTHUBMESSAGE_02_025: [Otherwise, IoTHubMessage_CreateFromByteArray shall return a non-NULL handle.] */
-                /*Codes_SRS_IOTHUBMESSAGE_02_026: [The type of the new message shall be IOTHUBMESSAGE_BYTEARRAY.] */
-                result->contentType = IOTHUBMESSAGE_BYTEARRAY;
-                result->messageId = NULL;
-                result->correlationId = NULL;
-                /*all is fine, return result*/
+                /*Codes_SRS_IOTHUBMESSAGE_06_001: [If size is zero then byteArray may be NULL.]*/
+                source = &temp;
+            }
+            if (result != NULL)
+            {
+                /*Codes_SRS_IOTHUBMESSAGE_02_022: [IoTHubMessage_CreateFromByteArray shall call BUFFER_create passing byteArray and size as parameters.] */
+                if ((result->value.byteArray = BUFFER_create(source, size)) == NULL)
+                {
+                    LogError("BUFFER_create failed");
+                    /*Codes_SRS_IOTHUBMESSAGE_02_024: [If there are any errors then IoTHubMessage_CreateFromByteArray shall return NULL.] */
+                    free(result);
+                    result = NULL;
+                }
+                /*Codes_SRS_IOTHUBMESSAGE_02_023: [IoTHubMessage_CreateFromByteArray shall call Map_Create to create the message properties.] */
+                else if ((result->properties = Map_Create(ValidateAsciiCharactersFilter)) == NULL)
+                {
+                    LogError("Map_Create failed");
+                    /*Codes_SRS_IOTHUBMESSAGE_02_024: [If there are any errors then IoTHubMessage_CreateFromByteArray shall return NULL.] */
+                    BUFFER_delete(result->value.byteArray);
+                    free(result);
+                    result = NULL;
+                }
+                else
+                {
+                    /*Codes_SRS_IOTHUBMESSAGE_02_025: [Otherwise, IoTHubMessage_CreateFromByteArray shall return a non-NULL handle.] */
+                    /*Codes_SRS_IOTHUBMESSAGE_02_026: [The type of the new message shall be IOTHUBMESSAGE_BYTEARRAY.] */
+                    result->contentType = IOTHUBMESSAGE_BYTEARRAY;
+                    result->messageId = NULL;
+                    result->correlationId = NULL;
+                    /*all is fine, return result*/
+                }
             }
         }
     }
     return result;
 }
+
 IOTHUB_MESSAGE_HANDLE IoTHubMessage_CreateFromString(const char* source)
 {
     IOTHUB_MESSAGE_HANDLE_DATA* result;
-    result = malloc(sizeof(IOTHUB_MESSAGE_HANDLE_DATA));
-    if (result == NULL)
+    if (source == NULL)
     {
-        LogError("malloc failed");
-        /*Codes_SRS_IOTHUBMESSAGE_02_029: [If there are any encountered in the execution of IoTHubMessage_CreateFromString then IoTHubMessage_CreateFromString shall return NULL.] */
-        /*let it go through*/
+        LogError("Invalid argument - source is NULL");
+        result = NULL;
     }
     else
     {
-        /*Codes_SRS_IOTHUBMESSAGE_02_027: [IoTHubMessage_CreateFromString shall call STRING_construct passing source as parameter.] */
-        if ((result->value.string = STRING_construct(source)) == NULL)
+        result = (IOTHUB_MESSAGE_HANDLE_DATA*)malloc(sizeof(IOTHUB_MESSAGE_HANDLE_DATA));
+        if (result == NULL)
         {
-            LogError("STRING_construct failed");
+            LogError("malloc failed");
             /*Codes_SRS_IOTHUBMESSAGE_02_029: [If there are any encountered in the execution of IoTHubMessage_CreateFromString then IoTHubMessage_CreateFromString shall return NULL.] */
-            free(result);
-            result = NULL;
-        }
-        /*Codes_SRS_IOTHUBMESSAGE_02_028: [IoTHubMessage_CreateFromString shall call Map_Create to create the message properties.] */
-        else if ((result->properties = Map_Create(ValidateAsciiCharactersFilter)) == NULL)
-        {
-            LogError("Map_Create failed");
-            /*Codes_SRS_IOTHUBMESSAGE_02_029: [If there are any encountered in the execution of IoTHubMessage_CreateFromString then IoTHubMessage_CreateFromString shall return NULL.] */
-            STRING_delete(result->value.string);
-            free(result);
-            result = NULL;
+            /*let it go through*/
         }
         else
         {
-            /*Codes_SRS_IOTHUBMESSAGE_02_031: [Otherwise, IoTHubMessage_CreateFromString shall return a non-NULL handle.] */
-            /*Codes_SRS_IOTHUBMESSAGE_02_032: [The type of the new message shall be IOTHUBMESSAGE_STRING.] */
-            result->contentType = IOTHUBMESSAGE_STRING;
-            result->messageId = NULL;
-            result->correlationId = NULL;
+            /*Codes_SRS_IOTHUBMESSAGE_02_027: [IoTHubMessage_CreateFromString shall call STRING_construct passing source as parameter.] */
+            if ((result->value.string = STRING_construct(source)) == NULL)
+            {
+                LogError("STRING_construct failed");
+                /*Codes_SRS_IOTHUBMESSAGE_02_029: [If there are any encountered in the execution of IoTHubMessage_CreateFromString then IoTHubMessage_CreateFromString shall return NULL.] */
+                free(result);
+                result = NULL;
+            }
+            /*Codes_SRS_IOTHUBMESSAGE_02_028: [IoTHubMessage_CreateFromString shall call Map_Create to create the message properties.] */
+            else if ((result->properties = Map_Create(ValidateAsciiCharactersFilter)) == NULL)
+            {
+                LogError("Map_Create failed");
+                /*Codes_SRS_IOTHUBMESSAGE_02_029: [If there are any encountered in the execution of IoTHubMessage_CreateFromString then IoTHubMessage_CreateFromString shall return NULL.] */
+                STRING_delete(result->value.string);
+                free(result);
+                result = NULL;
+            }
+            else
+            {
+                /*Codes_SRS_IOTHUBMESSAGE_02_031: [Otherwise, IoTHubMessage_CreateFromString shall return a non-NULL handle.] */
+                /*Codes_SRS_IOTHUBMESSAGE_02_032: [The type of the new message shall be IOTHUBMESSAGE_STRING.] */
+                result->contentType = IOTHUBMESSAGE_STRING;
+                result->messageId = NULL;
+                result->correlationId = NULL;
+            }
         }
     }
     return result;
@@ -511,10 +526,13 @@ void IoTHubMessage_Destroy(IOTHUB_MESSAGE_HANDLE iotHubMessageHandle)
         {
             BUFFER_delete(handleData->value.byteArray);
         }
+        else if (handleData->contentType == IOTHUBMESSAGE_STRING)
+        {
+            STRING_delete(handleData->value.string);
+        }
         else
         {
-            /*can only be STRING*/
-            STRING_delete(handleData->value.string);
+            LogError("Unknown contentType in IoTHubMessage");
         }
         Map_Destroy(handleData->properties);
         free(handleData->messageId);

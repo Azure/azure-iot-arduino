@@ -2,32 +2,41 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
 #include "iothubtransportmqtt.h"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/platform.h"
 #include "iothubtransport_mqtt_common.h"
 
-static XIO_HANDLE getIoTransportProvider(const char* fqdn)
+static XIO_HANDLE getIoTransportProvider(const char* fully_qualified_name, const MQTT_TRANSPORT_PROXY_OPTIONS* mqtt_transport_proxy_options)
 {
     XIO_HANDLE result;
+
+    /* Codes_SRS_IOTHUB_MQTT_TRANSPORT_01_001: [ `getIoTransportProvider` shall obtain the TLS IO interface handle by calling `platform_get_default_tlsio`. ]*/
     const IO_INTERFACE_DESCRIPTION* io_interface_description = platform_get_default_tlsio();
+    (void)mqtt_transport_proxy_options;
+
     if (io_interface_description == NULL)
     {
-        /* Codes_SRS_IOTHUB_MQTT_TRANSPORT_07_013: [ If platform_get_default_tlsio returns NULL getIoTransportProvider shall return NULL. ] */
+        /* Codes_SRS_IOTHUB_MQTT_TRANSPORT_07_013: [ If `platform_get_default_tlsio` returns NULL, `getIoTransportProvider` shall return NULL. ] */
         LogError("Failure constructing the provider interface");
         result = NULL;
     }
     else
     {
+        /* Codes_SRS_IOTHUB_MQTT_TRANSPORT_01_002: [ The TLS IO parameters shall be a `TLSIO_CONFIG` structure filled as below: ]*/
         TLSIO_CONFIG tls_io_config;
-        tls_io_config.hostname = fqdn;
+
+        /* Codes_SRS_IOTHUB_MQTT_TRANSPORT_01_003: [ - `hostname` shall be set to `fully_qualified_name`. ]*/
+        tls_io_config.hostname = fully_qualified_name;
+        /* Codes_SRS_IOTHUB_MQTT_TRANSPORT_01_004: [ - `port` shall be set to 8883. ]*/
         tls_io_config.port = 8883;
-        /* Codes_SRS_IOTHUB_MQTT_TRANSPORT_07_012: [ getIoTransportProvider shall return the XIO_HANDLE returns by xio_create. ] */
+        /* Codes_SRS_IOTHUB_MQTT_TRANSPORT_01_005: [ - `underlying_io_interface` shall be set to NULL. ]*/
+        tls_io_config.underlying_io_interface = NULL;
+        /* Codes_SRS_IOTHUB_MQTT_TRANSPORT_01_006: [ - `underlying_io_parameters` shall be set to NULL. ]*/
+        tls_io_config.underlying_io_parameters = NULL;
+
+        /* Codes_SRS_IOTHUB_MQTT_TRANSPORT_07_012: [ `getIoTransportProvider` shall return the `XIO_HANDLE` returned by `xio_create`. ] */
         result = xio_create(io_interface_description, &tls_io_config);
     }
     return result;
@@ -87,6 +96,12 @@ static int IoTHubTransportMqtt_DeviceMethod_Response(IOTHUB_DEVICE_HANDLE handle
     return IoTHubTransport_MQTT_Common_DeviceMethod_Response(handle, methodId, response, response_size, status_response);
 }
 
+/* Codes_SRS_IOTHUB_MQTT_TRANSPORT_10_001: [IoTHubTransportMqtt_SendMessageDisposition shall send the message disposition by calling into the IoTHubMqttAbstract_SendMessageDisposition function.] */
+static IOTHUB_CLIENT_RESULT IoTHubTransportMqtt_SendMessageDisposition(MESSAGE_CALLBACK_INFO* message_data, IOTHUBMESSAGE_DISPOSITION_RESULT disposition)
+{
+    return IoTHubTransport_MQTT_Common_SendMessageDisposition(message_data, disposition);
+}
+
 static IOTHUB_PROCESS_ITEM_RESULT IoTHubTransportMqtt_ProcessItem(TRANSPORT_LL_HANDLE handle, IOTHUB_IDENTITY_TYPE item_type, IOTHUB_IDENTITY_INFO* iothub_item)
 {
     return IoTHubTransport_MQTT_Common_ProcessItem(handle, item_type, iothub_item);
@@ -137,6 +152,7 @@ static STRING_HANDLE IoTHubTransportMqtt_GetHostname(TRANSPORT_LL_HANDLE handle)
 
 static TRANSPORT_PROVIDER myfunc = 
 {
+    IoTHubTransportMqtt_SendMessageDisposition,     /*pfIotHubTransport_SendMessageDisposition IoTHubTransport_SendMessageDisposition;*/
     IoTHubTransportMqtt_Subscribe_DeviceMethod,     /*pfIoTHubTransport_Subscribe_DeviceMethod IoTHubTransport_Subscribe_DeviceMethod;*/
     IoTHubTransportMqtt_Unsubscribe_DeviceMethod,   /*pfIoTHubTransport_Unsubscribe_DeviceMethod IoTHubTransport_Unsubscribe_DeviceMethod;*/
     IoTHubTransportMqtt_DeviceMethod_Response,      /*pfIoTHubTransport_DeviceMethod_Response IoTHubTransport_DeviceMethod_Response;*/
