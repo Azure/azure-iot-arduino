@@ -21,6 +21,7 @@ before_install:
   - if [[ "$BOARD" =~ "arduino:samd:" ]]; then
       arduino --install-boards arduino:samd;
       arduino --install-library WiFi101;
+      arduino --install-library WiFi101;
       arduino --install-library RTCZero;
       arduino --install-library NTPClient;
     fi
