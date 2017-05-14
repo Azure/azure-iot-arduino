@@ -16,8 +16,8 @@ Currently supported hardware:
 ## Prerequisites
 
 You should have the following ready before beginning with any board:
--   [Setup your IoT hub](https://github.com/Azure/azure-iot-sdks/blob/master/doc/setup_iothub.md)
--   [Provision your device and get its credentials](https://github.com/Azure/azure-iot-sdks/blob/master/doc/manage_iot_hub.md)
+-   [Setup your IoT hub](https://github.com/Azure/azure-iot-device-ecosystem/blob/master/setup_iothub.md)
+-   [Provision your device and get its credentials](https://github.com/Azure/azure-iot-device-ecosystem/blob/master/manage_iot_hub.md)
 -   [Arduino IDE 1.6.8](https://www.arduino.cc/en/Main/Software)
 -   Install the `AzureIoTHub` library via the Arduino IDE Library Manager
 -   Install the `AzureIoTUtility` library via the Arduino IDE Library Manager
