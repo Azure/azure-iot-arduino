@@ -23,6 +23,7 @@
 
 #include "azure_c_shared_utility/string_tokenizer.h"
 #include "azure_c_shared_utility/shared_util_options.h"
+#include "azure_c_shared_utility/urlencode.h"
 #include "iothub_client_version.h"
 
 #include "iothubtransport_mqtt_common.h"
@@ -803,6 +804,7 @@ static STRING_HANDLE addPropertiesTouMqttMessage(IOTHUB_MESSAGE_HANDLE iothub_me
     const char* const* propertyKeys;
     const char* const* propertyValues;
     size_t propertyCount;
+    size_t index = 0;
 
     // Construct Properties
     MAP_HANDLE properties_map = IoTHubMessage_Properties(iothub_message_handle);
@@ -818,15 +820,46 @@ static STRING_HANDLE addPropertiesTouMqttMessage(IOTHUB_MESSAGE_HANDLE iothub_me
         {
             if (propertyCount != 0)
             {
-                size_t index = 0;
                 for (index = 0; index < propertyCount && result != NULL; index++)
                 {
                     if (STRING_sprintf(result, "%s=%s%s", propertyKeys[index], propertyValues[index], propertyCount - 1 == index ? "" : PROPERTY_SEPARATOR) != 0)
                     {
+                        LogError("Failed construting property string.");
                         STRING_delete(result);
                         result = NULL;
                     }
                 }
+            }
+        }
+    }
+
+    /* Codes_SRS_IOTHUB_TRANSPORT_MQTT_COMMON_07_052: [ IoTHubTransport_MQTT_Common_DoWork shall check for the CorrelationId property and if found add the value as a system property in the format of $.cid=<id> ] */
+    if (result != NULL)
+    {
+        const char* correlation_id = IoTHubMessage_GetCorrelationId(iothub_message_handle);
+        if (correlation_id != NULL)
+        {
+            if (STRING_sprintf(result, "%s%%24.cid=%s", index == 0 ? "" : PROPERTY_SEPARATOR, correlation_id) != 0)
+            {
+                LogError("Failed setting correlation_id.");
+                STRING_delete(result);
+                result = NULL;
+            }
+            index++;
+        }
+    }
+
+    /* Codes_SRS_IOTHUB_TRANSPORT_MQTT_COMMON_07_053: [ IoTHubTransport_MQTT_Common_DoWork shall check for the MessageId property and if found add the value as a system property in the format of $.mid=<id> ] */
+    if (result != NULL)
+    {
+        const char* msg_id = IoTHubMessage_GetMessageId(iothub_message_handle);
+        if (msg_id != NULL)
+        {
+            if (STRING_sprintf(result, "%s%%24.mid=%s", index == 0 ? "" : PROPERTY_SEPARATOR, msg_id) != 0)
+            {
+                LogError("Failed setting correlation_id.");
+                STRING_delete(result);
+                result = NULL;
             }
         }
     }
@@ -1686,6 +1719,22 @@ static int SendMqttConnectMsg(PMQTTTRANSPORT_HANDLE_DATA transport_data)
 
     if (result == 0)
     {
+        void* product_info;
+        STRING_HANDLE clone;
+        if ((IoTHubClient_LL_GetOption(transport_data->llClientHandle, OPTION_PRODUCT_INFO, &product_info) == IOTHUB_CLIENT_ERROR) || (product_info == NULL))
+        {
+            clone = STRING_construct_sprintf("%s%%2F%s", CLIENT_DEVICE_TYPE_PREFIX, IOTHUB_SDK_VERSION);
+        }
+        else
+        {
+            clone = URL_Encode(product_info);
+        }
+        if (clone != NULL)
+        {
+            (void)STRING_concat_with_STRING(transport_data->configPassedThroughUsername, clone);
+            STRING_delete(clone);
+        }
+
         MQTT_CLIENT_OPTIONS options = { 0 };
         options.clientId = (char*)STRING_c_str(transport_data->device_id);
         options.willMessage = NULL;
@@ -1824,8 +1873,7 @@ static int InitializeConnection(PMQTTTRANSPORT_HANDLE_DATA transport_data)
 
 static STRING_HANDLE buildConfigForUsername(const IOTHUB_CLIENT_CONFIG* upperConfig)
 {
-    STRING_HANDLE result = STRING_construct_sprintf("%s.%s/%s/api-version=%s&DeviceClientType=%s%%2F%s", upperConfig->iotHubName, upperConfig->iotHubSuffix, upperConfig->deviceId, IOTHUB_API_VERSION, CLIENT_DEVICE_TYPE_PREFIX, IOTHUB_SDK_VERSION);
-    return result;
+    return STRING_construct_sprintf("%s.%s/%s/api-version=%s&DeviceClientType=", upperConfig->iotHubName, upperConfig->iotHubSuffix, upperConfig->deviceId, IOTHUB_API_VERSION);
 }
 
 static PMQTTTRANSPORT_HANDLE_DATA InitializeTransportHandleData(const IOTHUB_CLIENT_CONFIG* upperConfig, PDLIST_ENTRY waitingToSend, IOTHUB_AUTHORIZATION_HANDLE auth_module)
@@ -2808,11 +2856,12 @@ STRING_HANDLE IoTHubTransport_MQTT_Common_GetHostname(TRANSPORT_LL_HANDLE handle
     {
         result = NULL;
     }
-    else
+    /*Codes_SRS_IOTHUB_MQTT_TRANSPORT_02_002: [ Otherwise IoTHubTransport_MQTT_Common_GetHostname shall return a non-NULL STRING_HANDLE containg the hostname. ]*/
+    else if ((result = STRING_clone(((MQTTTRANSPORT_HANDLE_DATA*)(handle))->hostAddress)) == NULL)
     {
-        /*Codes_SRS_IOTHUB_MQTT_TRANSPORT_02_002: [ Otherwise IoTHubTransport_MQTT_Common_GetHostname shall return a non-NULL STRING_HANDLE containg the hostname. ]*/
-        result = ((MQTTTRANSPORT_HANDLE_DATA*)handle)->hostAddress;
+        LogError("Cannot provide the target host name (STRING_clone failed).");
     }
+
     return result;
 }
 

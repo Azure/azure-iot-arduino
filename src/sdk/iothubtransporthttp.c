@@ -168,6 +168,21 @@ static void destroy_eventHTTPrequestHeaders(HTTPTRANSPORT_PERDEVICE_DATA* handle
     handleData->eventHTTPrequestHeaders = NULL;
 }
 
+static HTTP_HEADERS_RESULT addUserAgentHeaderInfo(IOTHUB_CLIENT_LL_HANDLE hClient, HTTP_HEADERS_HANDLE eventHTTPrequestHeaders)
+{
+    void* product_info;
+    HTTP_HEADERS_RESULT result;
+    if ((IoTHubClient_LL_GetOption(hClient, OPTION_PRODUCT_INFO, &product_info) == IOTHUB_CLIENT_ERROR) || (product_info == NULL))
+    {
+        result = HTTPHeaders_AddHeaderNameValuePair(eventHTTPrequestHeaders, "User-Agent", CLIENT_DEVICE_TYPE_PREFIX CLIENT_DEVICE_BACKSLASH IOTHUB_SDK_VERSION);
+    }
+    else
+    {
+        result = HTTPHeaders_AddHeaderNameValuePair(eventHTTPrequestHeaders, "User-Agent", STRING_c_str((STRING_HANDLE)product_info));
+    }
+    return result;
+}
+
 static bool create_eventHTTPrequestHeaders(HTTPTRANSPORT_PERDEVICE_DATA* handleData, const char * deviceId, bool is_x509_used)
 {
     /*Codes_SRS_TRANSPORTMULTITHTTP_17_021: [ IoTHubTransportHttp_Register shall create a set of HTTP headers (further called "event HTTP request headers") consisting of the following fixed field names and values: "iothub-to":"/devices/" + URL_ENCODED(deviceId) + "/messages/events"; "Authorization":""
@@ -209,7 +224,7 @@ static bool create_eventHTTPrequestHeaders(HTTPTRANSPORT_PERDEVICE_DATA* handleD
                     (is_x509_used || (HTTPHeaders_AddHeaderNameValuePair(handleData->eventHTTPrequestHeaders, "Authorization", " ") == HTTP_HEADERS_OK)) &&
                     (HTTPHeaders_AddHeaderNameValuePair(handleData->eventHTTPrequestHeaders, "Accept", "application/json") == HTTP_HEADERS_OK) &&
                     (HTTPHeaders_AddHeaderNameValuePair(handleData->eventHTTPrequestHeaders, "Connection", "Keep-Alive") == HTTP_HEADERS_OK) &&
-                    (HTTPHeaders_AddHeaderNameValuePair(handleData->eventHTTPrequestHeaders, "User-Agent", CLIENT_DEVICE_TYPE_PREFIX CLIENT_DEVICE_BACKSLASH IOTHUB_SDK_VERSION) == HTTP_HEADERS_OK)
+                    (addUserAgentHeaderInfo(handleData->iotHubClientHandle, handleData->eventHTTPrequestHeaders) == HTTP_HEADERS_OK)
                     ))
                 {
                     /*Codes_SRS_TRANSPORTMULTITHTTP_17_022: [ If creating the event HTTP request headers fails, then IoTHubTransportHttp_Register shall fail and return NULL.] */
@@ -249,7 +264,7 @@ static bool create_messageHTTPrequestHeaders(HTTPTRANSPORT_PERDEVICE_DATA* handl
     else
     {
         if (!(
-            (HTTPHeaders_AddHeaderNameValuePair(handleData->messageHTTPrequestHeaders, "User-Agent", CLIENT_DEVICE_TYPE_PREFIX CLIENT_DEVICE_BACKSLASH IOTHUB_SDK_VERSION) == HTTP_HEADERS_OK) &&
+            (addUserAgentHeaderInfo(handleData->iotHubClientHandle, handleData->eventHTTPrequestHeaders) == HTTP_HEADERS_OK) &&
             (is_x509_used || (HTTPHeaders_AddHeaderNameValuePair(handleData->messageHTTPrequestHeaders, "Authorization", " ") == HTTP_HEADERS_OK))
             ))
         {
@@ -553,7 +568,16 @@ static IOTHUB_DEVICE_HANDLE IoTHubTransportHttp_Register(TRANSPORT_LL_HANDLE han
 
             bool was_eventHTTPrelativePath_ok = (was_create_deviceKey_ok || was_create_deviceSasToken_ok || was_x509_ok) && create_eventHTTPrelativePath(result, device->deviceId);
             bool was_messageHTTPrelativePath_ok = was_eventHTTPrelativePath_ok && create_messageHTTPrelativePath(result, device->deviceId);
-            bool was_eventHTTPrequestHeaders_ok = was_messageHTTPrelativePath_ok && create_eventHTTPrequestHeaders(result, device->deviceId, was_x509_ok);
+            bool was_eventHTTPrequestHeaders_ok;
+            if (was_messageHTTPrelativePath_ok)
+            {
+                result->iotHubClientHandle = iotHubClientHandle;
+                was_eventHTTPrequestHeaders_ok = create_eventHTTPrequestHeaders(result, device->deviceId, was_x509_ok);
+            }
+            else
+            {
+                was_eventHTTPrequestHeaders_ok = false;
+            }
             bool was_messageHTTPrequestHeaders_ok = was_eventHTTPrequestHeaders_ok && create_messageHTTPrequestHeaders(result, was_x509_ok);
             bool was_abandonHTTPrelativePathBegin_ok = was_messageHTTPrequestHeaders_ok && create_abandonHTTPrelativePathBegin(result, device->deviceId);
 
@@ -580,7 +604,6 @@ static IOTHUB_DEVICE_HANDLE IoTHubTransportHttp_Register(TRANSPORT_LL_HANDLE han
                 /*Codes_SRS_TRANSPORTMULTITHTTP_17_128: [ IoTHubTransportHttp_Register shall mark this device as unsubscribed. ]*/
                 result->DoWork_PullMessage = false;
                 result->isFirstPoll = true;
-                result->iotHubClientHandle = iotHubClientHandle;
                 result->waitingToSend = waitingToSend;
                 DList_InitializeListHead(&(result->eventConfirmations));
                 result->transportHandle = (HTTPTRANSPORT_HANDLE_DATA *) handle;
@@ -1739,7 +1762,7 @@ static bool abandonOrAcceptMessage(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTR
                 else
                 {
                     if (!(
-                        (HTTPHeaders_AddHeaderNameValuePair(abandonRequestHttpHeaders, "User-Agent", CLIENT_DEVICE_TYPE_PREFIX CLIENT_DEVICE_BACKSLASH IOTHUB_SDK_VERSION) == HTTP_HEADERS_OK) &&
+                        (addUserAgentHeaderInfo(deviceData->iotHubClientHandle, abandonRequestHttpHeaders) == HTTP_HEADERS_OK) &&
                         (HTTPHeaders_AddHeaderNameValuePair(abandonRequestHttpHeaders, "Authorization", " ") == HTTP_HEADERS_OK) &&
                         (HTTPHeaders_AddHeaderNameValuePair(abandonRequestHttpHeaders, "If-Match", ETag) == HTTP_HEADERS_OK)
                         ))
@@ -2067,8 +2090,12 @@ static void DoMessages(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTRANSPORT_PERD
                                 }
                                 else
                                 {
+                                    const unsigned char* resp_content;
+                                    size_t resp_len;
                                     /*Codes_SRS_TRANSPORTMULTITHTTP_17_089: [_DoWork shall assemble an IOTHUBMESSAGE_HANDLE from the received HTTP content (using the responseContent buffer).] */
-                                    IOTHUB_MESSAGE_HANDLE receivedMessage = IoTHubMessage_CreateFromByteArray(BUFFER_u_char(responseContent), BUFFER_length(responseContent));
+                                    resp_content = BUFFER_u_char(responseContent);
+                                    resp_len = BUFFER_length(responseContent);
+                                    IOTHUB_MESSAGE_HANDLE receivedMessage = IoTHubMessage_CreateFromByteArray(resp_content, resp_len);
                                     if (receivedMessage == NULL)
                                     {
                                         /*Codes_SRS_TRANSPORTMULTITHTTP_17_092: [If assembling the message fails in any way, then _DoWork shall "abandon" the message.]*/
@@ -2358,12 +2385,12 @@ static STRING_HANDLE IoTHubTransportHttp_GetHostname(TRANSPORT_LL_HANDLE handle)
         LogError("invalid parameter handle=%p", handle);
         result = NULL;
     }
-    else
+    /*Codes_SRS_TRANSPORTMULTITHTTP_02_002: [ Otherwise IoTHubTransportHttp_GetHostname shall return a non-NULL STRING_HANDLE containing the hostname. ]*/
+    else if ((result = STRING_clone(((HTTPTRANSPORT_HANDLE_DATA*)(handle))->hostName)) == NULL)
     {
-        /*Codes_SRS_TRANSPORTMULTITHTTP_02_002: [ Otherwise IoTHubTransportHttp_GetHostname shall return a non-NULL STRING_HANDLE containing the hostname. ]*/
-        HTTPTRANSPORT_HANDLE_DATA* handleData = (HTTPTRANSPORT_HANDLE_DATA*)handle;
-        result = handleData->hostName;
+        LogError("Cannot provide the target host name (STRING_clone failed).");
     }
+
     return result;
 }
 
