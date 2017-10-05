@@ -20,6 +20,7 @@ extern "C" {
 
 typedef struct MQTT_MESSAGE_TAG* MQTT_MESSAGE_HANDLE;
 
+MOCKABLE_FUNCTION(, MQTT_MESSAGE_HANDLE, mqttmessage_create_in_place, uint16_t, packetId, const char*, topicName, QOS_VALUE, qosValue, const uint8_t*, appMsg, size_t, appMsgLength);
 MOCKABLE_FUNCTION(, MQTT_MESSAGE_HANDLE, mqttmessage_create, uint16_t, packetId, const char*, topicName, QOS_VALUE, qosValue, const uint8_t*, appMsg, size_t, appMsgLength);
 MOCKABLE_FUNCTION(,void, mqttmessage_destroy, MQTT_MESSAGE_HANDLE, handle);
 MOCKABLE_FUNCTION(,MQTT_MESSAGE_HANDLE, mqttmessage_clone, MQTT_MESSAGE_HANDLE, handle);
