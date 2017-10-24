@@ -42,7 +42,7 @@
 #define STARTING_CAPACITY         15
 #define ARRAY_MAX_CAPACITY    122880 /* 15*(2^13) */
 #define OBJECT_MAX_CAPACITY      960 /* 15*(2^6)  */
-#define MAX_NESTING               19
+#define MAX_NESTING             2048
 #define DOUBLE_SERIALIZATION_FORMAT "%f"
 
 #define SIZEOF_TOKEN(a)       (sizeof(a) - 1)
@@ -566,9 +566,12 @@ static char* process_string(const char *input, size_t len) {
     const char *input_ptr = input;
     size_t initial_size = (len + 1) * sizeof(char);
     size_t final_size = 0;
-    char *output = (char*)parson_malloc(initial_size);
-    char *output_ptr = output;
-    char *resized_output = NULL;
+    char *output = NULL, *output_ptr = NULL, *resized_output = NULL;
+    output = (char*)parson_malloc(initial_size);
+    if (output == NULL) {
+        goto error;
+    }
+    output_ptr = output;
     while ((*input_ptr != '\0') && (size_t)(input_ptr - input) < len) {
         if (*input_ptr == '\\') {
             input_ptr++;
@@ -666,8 +669,13 @@ static JSON_Value * parse_object_value(const char **string, size_t nesting) {
     }
     while (**string != '\0') {
         new_key = get_quoted_string(string);
+        if (new_key == NULL) {
+            json_value_free(output_value);
+            return NULL;
+        }
         SKIP_WHITESPACES(string);
-        if (new_key == NULL || **string != ':') {
+        if (**string != ':') {
+            parson_free(new_key);
             json_value_free(output_value);
             return NULL;
         }
@@ -678,9 +686,9 @@ static JSON_Value * parse_object_value(const char **string, size_t nesting) {
             json_value_free(output_value);
             return NULL;
         }
-        if(json_object_add(output_object, new_key, new_value) == JSONFailure) {
+        if (json_object_add(output_object, new_key, new_value) == JSONFailure) {
             parson_free(new_key);
-            parson_free(new_value);
+            json_value_free(new_value);
             json_value_free(output_value);
             return NULL;
         }
@@ -716,12 +724,12 @@ static JSON_Value * parse_array_value(const char **string, size_t nesting) {
     }
     while (**string != '\0') {
         new_array_value = parse_value(string, nesting);
-        if (!new_array_value) {
+        if (new_array_value == NULL) {
             json_value_free(output_value);
             return NULL;
         }
         if (json_array_add(output_array, new_array_value) == JSONFailure) {
-            parson_free(new_array_value);
+            json_value_free(new_array_value);
             json_value_free(output_value);
             return NULL;
         }
@@ -1539,20 +1547,13 @@ void json_free_serialized_string(char *string) {
 }
 
 JSON_Status json_array_remove(JSON_Array *array, size_t ix) {
-    JSON_Value *temp_value = NULL;
-    size_t last_element_ix = 0;
+    size_t to_move_bytes = 0;
     if (array == NULL || ix >= json_array_get_count(array)) {
         return JSONFailure;
     }
-    last_element_ix = json_array_get_count(array) - 1;
     json_value_free(json_array_get_value(array, ix));
-    if (ix != last_element_ix) { /* Replace value with one from the end of array */
-        temp_value = json_array_get_value(array, last_element_ix);
-        if (temp_value == NULL) {
-            return JSONFailure;
-        }
-        array->items[ix] = temp_value;
-    }
+    to_move_bytes = (json_array_get_count(array) - 1 - ix) * sizeof(JSON_Value**);
+    memmove(array->items + ix, array->items + ix + 1, to_move_bytes);
     array->count -= 1;
     return JSONSuccess;
 }
@@ -1829,11 +1830,10 @@ JSON_Status json_object_dotremove(JSON_Object *object, const char *name) {
     } else {
         current_name = parson_strndup(name, dot_pos - name);
         temp_obj = json_object_get_object(object, current_name);
+        parson_free(current_name);
         if (temp_obj == NULL) {
-            parson_free(current_name);
             return JSONFailure;
         }
-        parson_free(current_name);
         return json_object_dotremove(temp_obj, dot_pos + 1);
     }
 }
@@ -1911,7 +1911,7 @@ JSON_Status json_validate(const JSON_Value *schema, const JSON_Value *value) {
     }
 }
 
-JSON_Status json_value_equals(const JSON_Value *a, const JSON_Value *b) {
+int json_value_equals(const JSON_Value *a, const JSON_Value *b) {
     JSON_Object *a_object = NULL, *b_object = NULL;
     JSON_Array *a_array = NULL, *b_array = NULL;
     const char *a_string = NULL, *b_string = NULL;
