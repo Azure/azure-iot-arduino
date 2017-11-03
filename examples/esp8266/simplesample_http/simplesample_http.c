@@ -5,33 +5,19 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include "iot_configs.h"
 
 /* This sample uses the _LL APIs of iothub_client for example purposes.
 That does not mean that HTTP only works with the _LL APIs.
 Simply changing the using the convenience layer (functions not having _LL)
 and removing calls to _DoWork will yield the same results. */
 
-#ifdef ARDUINO
 #include "AzureIoTHub.h"
-#else
-#include "azure_c_shared_utility/threadapi.h"
-#include "azure_c_shared_utility/platform.h"
-#include "serializer.h"
-#include "iothub_client_ll.h"
-#include "iothubtransporthttp.h"
-#endif
 
-#ifdef MBED_BUILD_TIMESTAMP
-#define SET_TRUSTED_CERT_IN_SAMPLES
-#endif // MBED_BUILD_TIMESTAMP
-
-#ifdef SET_TRUSTED_CERT_IN_SAMPLES
-#include "certs.h"
-#endif // SET_TRUSTED_CERT_IN_SAMPLES
 
 /*String containing Hostname, Device Id & Device Key in the format:             */
 /*  "HostName=<host_name>;DeviceId=<device_id>;SharedAccessKey=<device_key>"    */
-static const char* connectionString = "[device connection string]";
+static const char* connectionString = IOT_CONFIG_CONNECTION_STRING;
 
 // Define the Model
 BEGIN_NAMESPACE(WeatherStation);
