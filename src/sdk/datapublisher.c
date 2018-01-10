@@ -569,3 +569,4 @@ void DataPublisher_DestroyTransaction_ReportedProperties(REPORTED_PROPERTIES_TRA
     }
     return;
 }
+

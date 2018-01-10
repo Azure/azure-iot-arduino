@@ -196,3 +196,4 @@ int IoTHubClient_Diagnostic_AddIfNecessary(IOTHUB_DIAGNOSTIC_SETTING_DATA* diagS
 
     return result;
 }
+

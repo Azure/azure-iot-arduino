@@ -172,3 +172,4 @@ SCHEMA_SERIALIZER_RESULT SchemaSerializer_SerializeCommandMetadata(SCHEMA_MODEL_
 
     return result;
 }
+

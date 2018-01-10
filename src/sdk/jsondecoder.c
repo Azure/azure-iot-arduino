@@ -609,3 +609,4 @@ JSON_DECODER_RESULT JSONDecoder_JSON_To_MultiTree(char* json, MULTITREE_HANDLE* 
 
     return result;
 }
+

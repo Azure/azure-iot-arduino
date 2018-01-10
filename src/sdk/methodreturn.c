@@ -100,3 +100,4 @@ const METHODRETURN_DATA* MethodReturn_GetReturn(METHODRETURN_HANDLE handle)
     }
     return result;
 }
+

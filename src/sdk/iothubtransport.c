@@ -449,3 +449,4 @@ void IoTHubTransport_JoinWorkerThread(TRANSPORT_HANDLE transportHandle, IOTHUB_C
         wait_worker_thread(transportData);
     }
 }
+

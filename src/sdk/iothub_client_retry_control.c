@@ -550,3 +550,4 @@ OPTIONHANDLER_HANDLE retry_control_retrieve_options(RETRY_CONTROL_HANDLE retry_c
 
 	return result;
 }
+

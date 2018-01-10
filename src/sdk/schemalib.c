@@ -92,3 +92,4 @@ SERIALIZER_RESULT serializer_setconfig(SERIALIZER_CONFIG which, void* value)
 
     return result;
 }
+

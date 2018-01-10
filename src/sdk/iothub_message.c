@@ -723,3 +723,4 @@ void IoTHubMessage_Destroy(IOTHUB_MESSAGE_HANDLE iotHubMessageHandle)
         DestroyMessageData((IOTHUB_MESSAGE_HANDLE_DATA* )iotHubMessageHandle);
     }
 }
+

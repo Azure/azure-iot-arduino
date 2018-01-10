@@ -56,3 +56,4 @@ MULTITREE_HANDLE DataSerializer_Decode(BUFFER_HANDLE data, DATA_SERIALIZER_DECOD
     /* Codes_SRS_DATA_SERIALIZER_07_006: [DataSerializer_Decode shall return a valid MULTITREE_HANDLE when the function executes successfully.] */
     return multiTreeHandle;
 }
+

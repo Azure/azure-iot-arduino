@@ -216,3 +216,4 @@ JSON_ENCODER_TOSTRING_RESULT JSONEncoder_CharPtr_ToString(STRING_HANDLE destinat
 
     return result;
 }
+

@@ -6,14 +6,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "iot_configs.h"
-
-/* This sample uses the _LL APIs of iothub_client for example purposes.
-That does not mean that HTTP only works with the _LL APIs.
-Simply changing the using the convenience layer (functions not having _LL)
-and removing calls to _DoWork will yield the same results. */
+#include "sample.h"
 
 #include "AzureIoTHub.h"
-
 
 /*String containing Hostname, Device Id & Device Key in the format:             */
 /*  "HostName=<host_name>;DeviceId=<device_id>;SharedAccessKey=<device_key>"    */
@@ -246,4 +241,10 @@ void simplesample_http_run(void)
         }
         platform_deinit();
     }
+}
+
+
+void sample_run(void)
+{
+    simplesample_http_run();
 }
