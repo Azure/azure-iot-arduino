@@ -253,11 +253,17 @@ extern "C"
     *				- @b messageTimeout - the maximum time in milliseconds until a message
     *                 is timeouted. The time starts at IoTHubClient_SendEventAsync. By default,
     *                 messages do not expire. @p is a pointer to a uint64_t
-    *				- @b c2d_keep_alive_freq_secs - the AMQP C2D keep alive interval in seconds.
+    *				- @b svc2cl_keep_alive_timeout_secs - the AMQP service side keep alive interval in seconds.
     *                 After the connection established the client requests the server to set the 
     *                 keep alive interval for given time.
     *                 If it is not set then the default 240 sec applies. 
     *                 If it is set to zero the server will not send keep alive messages to the client.
+	*			    - @b cl2svc_keep_alive_send_ratio - the AMQP client side keep alive interval in seconds.
+	*                 After the connection established the server requests the client to set the
+	*                 keep alive interval for given time.
+	*                 If it is not set then the default ratio of 1/2 is applied.
+	*                 The ratio has to be greater than 0.0 and equal to or less than 0.9
+
     * @return	IOTHUB_CLIENT_OK upon success or an error code upon failure.
     */
     MOCKABLE_FUNCTION(, IOTHUB_CLIENT_RESULT, IoTHubClient_SetOption, IOTHUB_CLIENT_HANDLE, iotHubClientHandle, const char*, optionName, const void*, value);
@@ -351,15 +357,29 @@ extern "C"
     */
     MOCKABLE_FUNCTION(, IOTHUB_CLIENT_RESULT, IoTHubClient_UploadToBlobAsync, IOTHUB_CLIENT_HANDLE, iotHubClientHandle, const char*, destinationFileName, const unsigned char*, source, size_t, size, IOTHUB_CLIENT_FILE_UPLOAD_CALLBACK, iotHubClientFileUploadCallback, void*, context);
 
-    /**
+    /**  
+    ** DEPRECATED: Use IoTHubClient_UploadMultipleBlocksToBlobAsyncEx instead **
     * @brief                          Uploads a file to a Blob storage in chunks, fed through the callback function provided by the user.
     * @remarks                        This function allows users to upload large files in chunks, not requiring the whole file content to be passed in memory.
     * @param iotHubClientHandle       The handle created by a call to the IoTHubClient_Create function.
     * @param destinationFileName      The name of the file to be created in Azure Blob Storage.
     * @param getDataCallback          A callback to be invoked to acquire the file chunks to be uploaded, as well as to indicate the status of the upload of the previous block.
     * @param context                  Any data provided by the user to serve as context on getDataCallback.
-    * @returns                        An IOTHUB_CLIENT_RESULT value indicating the success or failure of the API call.*/
+    * @returns                        An IOTHUB_CLIENT_RESULT value indicating the success or failure of the API call.
+    ** DEPRECATED: Use IoTHubClient_UploadMultipleBlocksToBlobAsyncEx instead **
+    */
     MOCKABLE_FUNCTION(, IOTHUB_CLIENT_RESULT, IoTHubClient_UploadMultipleBlocksToBlobAsync, IOTHUB_CLIENT_HANDLE, iotHubClientHandle, const char*, destinationFileName, IOTHUB_CLIENT_FILE_UPLOAD_GET_DATA_CALLBACK, getDataCallback, void*, context);
+
+    /**
+    * @brief                          Uploads a file to a Blob storage in chunks, fed through the callback function provided by the user.
+    * @remarks                        This function allows users to upload large files in chunks, not requiring the whole file content to be passed in memory.
+    * @param iotHubClientHandle       The handle created by a call to the IoTHubClient_Create function.
+    * @param destinationFileName      The name of the file to be created in Azure Blob Storage.
+    * @param getDataCallbackEx        A callback to be invoked to acquire the file chunks to be uploaded, as well as to indicate the status of the upload of the previous block.
+    * @param context                  Any data provided by the user to serve as context on getDataCallback.
+    * @returns                        An IOTHUB_CLIENT_RESULT value indicating the success or failure of the API call.*/
+    MOCKABLE_FUNCTION(, IOTHUB_CLIENT_RESULT, IoTHubClient_UploadMultipleBlocksToBlobAsyncEx, IOTHUB_CLIENT_HANDLE, iotHubClientHandle, const char*, destinationFileName, IOTHUB_CLIENT_FILE_UPLOAD_GET_DATA_CALLBACK_EX, getDataCallbackEx, void*, context);
+
 #endif /* DONT_USE_UPLOADTOBLOB */
 
 #ifdef __cplusplus

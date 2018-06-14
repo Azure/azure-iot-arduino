@@ -9,6 +9,7 @@
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/macro_utils.h"
+#include "azure_c_shared_utility/const_defines.h"
 
 /*assume a name cannot be longer than 100 characters*/
 #define INNER_NODE_NAME_SIZE 128
@@ -92,7 +93,7 @@ typedef enum CREATELEAF_RESULT_TAG
                             // Do not remove, or add new enum values below this one
 }CREATELEAF_RESULT;
 
-static const char* CreateLeaf_ResultAsString[CREATELEAF_RESULT_COUNT] =
+static STATIC_VAR_UNUSED const char* CreateLeaf_ResultAsString[CREATELEAF_RESULT_COUNT] =
 {   
     TOSTRING(CREATELEAF_OK),
     TOSTRING(CREATELEAF_ALREADY_EXISTS),
@@ -101,6 +102,10 @@ static const char* CreateLeaf_ResultAsString[CREATELEAF_RESULT_COUNT] =
 };
 
 /*name cannot be empty, value can be empty or NULL*/
+#ifdef __APPLE__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wconditional-uninitialized"
+#endif
 #ifdef _MSC_VER
 #pragma warning(disable: 4701) /* potentially uninitialized local variable 'result' used */ /* the scanner cannot track linked "newNode" and "result" therefore the warning*/
 #endif
@@ -197,6 +202,9 @@ static CREATELEAF_RESULT createLeaf(MULTITREE_HANDLE_DATA* node, const char*name
     return result;
 #ifdef _MSC_VER
 #pragma warning(default: 4701) /* potentially uninitialized local variable 'result' used */ /* the scanner cannot track linked "newNode" and "result" therefore the warning*/
+#endif
+#ifdef __APPLE__
+#pragma clang diagnostic pop
 #endif
 }
 
