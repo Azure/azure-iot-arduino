@@ -6,13 +6,13 @@
 
 #include "AzureIoTUtility.h"
 
-#include "sdk/serializer.h"
+#include "serializer.h"
 
-#include "sdk/iothub_client_ll.h"
-#include "sdk/iothub_message.h"
-#include "sdk/iothubtransporthttp.h"
-#include "sdk/iothubtransportmqtt.h"
-#include "sdk/iothub_client_options.h"
+#include "iothub_client_ll.h"
+#include "iothub_message.h"
+#include "iothubtransporthttp.h"
+#include "iothubtransportmqtt.h"
+#include "iothub_client_options.h"
 
-#define AzureIoTHubVersion "1.0.45"
+#define AzureIoTHubVersion "1.0.46"
 #endif
