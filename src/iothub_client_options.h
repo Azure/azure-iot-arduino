@@ -45,10 +45,10 @@ extern "C"
     static STATIC_VAR_UNUSED const char* OPTION_AUTO_URL_ENCODE_DECODE = "auto_url_encode_decode";
     /*
     * @brief Informs the service of what is the maximum period the client will wait for a keep-alive message from the service.
-    *        The service must send keep-alives before this timeout is reached, otherwise the client will trigger its re-connection logic.
+    *        The service must send keep-alive before this timeout is reached, otherwise the client will trigger its re-connection logic.
     *        Setting this option to a low value results in more aggressive/responsive re-connection by the client.
     *        The default value for this option is 240 seconds, and the minimum allowed is usually 5 seconds.
-    *        To virtually disable the keep-alives from the service (and consequently the keep-alive timeout control on the client-side), set this option to a high value (e.g., UINT_MAX).
+    *        To virtually disable the keep-alive from the service (and consequently the keep-alive timeout control on the client-side), set this option to a high value (e.g., UINT_MAX).
     */
     static STATIC_VAR_UNUSED const char* OPTION_SERVICE_SIDE_KEEP_ALIVE_FREQ_SECS = "svc2cl_keep_alive_timeout_secs";
 
@@ -57,7 +57,7 @@ extern "C"
 
     /*
     * @brief Ratio to be used for client side pings in AMQP protocol.
-    *        The client must use this ratio to send keep-alives before service side remote idle timeout is reached, otherwise the service will disconnect the client.
+    *        The client must use this ratio to send keep-alive before service side remote idle timeout is reached, otherwise the service will disconnect the client.
     *        The default value for this option is 1/2 of the remote idle value sent by the service. 
     *        For AMQP remote idle set to 4 minutes, default client ping will be 2 minutes. For AMQP remote idle set to 25 minutes configured via per Hub basis, the default ping will be 12.5 minutes.
     */

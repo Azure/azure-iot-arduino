@@ -157,7 +157,7 @@ typedef struct MQTTTRANSPORT_HANDLE_DATA_TAG
     // The second segment will contain the device id.  The two segments are delemited by a "/".
     // The first segment can be a maximum 256 characters.
     // The second segment can be a maximum 128 characters.
-    // With the / delimeter you have 384 chars (Plus a terminator of 0).
+    // With the / delimiter you have 384 chars (Plus a terminator of 0).
     STRING_HANDLE configPassedThroughUsername;
 
     // Upper layer
@@ -2717,7 +2717,7 @@ void IoTHubTransport_MQTT_Common_DoWork(TRANSPORT_LL_HANDLE handle, IOTHUB_CLIEN
                     currentListEntry = savedFromCurrentListEntry.Flink;
                 }
             }
-            /* Codes_SRS_IOTHUB_MQTT_TRANSPORT_07_030: [IoTHubTransport_MQTT_Common_DoWork shall call mqtt_client_dowork everytime it is called if it is connected.] */
+            /* Codes_SRS_IOTHUB_MQTT_TRANSPORT_07_030: [IoTHubTransport_MQTT_Common_DoWork shall call mqtt_client_dowork every time it is called if it is connected.] */
             mqtt_client_dowork(transport_data->mqttClient);
         }
     }
@@ -2899,7 +2899,7 @@ IOTHUB_CLIENT_RESULT IoTHubTransport_MQTT_Common_SetOption(TRANSPORT_LL_HANDLE h
                     transport_data->http_proxy_username = copied_proxy_username;
                     transport_data->http_proxy_password = copied_proxy_password;
 
-                    /* Codes_SRS_IOTHUB_TRANSPORT_MQTT_COMMON_01_008: [ If setting the `proxy_data` option suceeds, `IoTHubTransport_MQTT_Common_SetOption` shall return `IOTHUB_CLIENT_OK` ]*/
+                    /* Codes_SRS_IOTHUB_TRANSPORT_MQTT_COMMON_01_008: [ If setting the `proxy_data` option succeeds, `IoTHubTransport_MQTT_Common_SetOption` shall return `IOTHUB_CLIENT_OK` ]*/
                     result = IOTHUB_CLIENT_OK;
                 }
             }
@@ -3015,7 +3015,7 @@ STRING_HANDLE IoTHubTransport_MQTT_Common_GetHostname(TRANSPORT_LL_HANDLE handle
     {
         result = NULL;
     }
-    /*Codes_SRS_IOTHUB_MQTT_TRANSPORT_02_002: [ Otherwise IoTHubTransport_MQTT_Common_GetHostname shall return a non-NULL STRING_HANDLE containg the hostname. ]*/
+    /*Codes_SRS_IOTHUB_MQTT_TRANSPORT_02_002: [ Otherwise IoTHubTransport_MQTT_Common_GetHostname shall return a non-NULL STRING_HANDLE containing the hostname. ]*/
     else if ((result = STRING_clone(((MQTTTRANSPORT_HANDLE_DATA*)(handle))->hostAddress)) == NULL)
     {
         LogError("Cannot provide the target host name (STRING_clone failed).");

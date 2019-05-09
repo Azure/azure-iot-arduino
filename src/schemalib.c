@@ -46,7 +46,7 @@ SERIALIZER_RESULT serializer_init(const char* overrideSchemaNamespace)
         }
         else
         {
-            /* Codes_SRS_SCHEMALIB_99_075:[When an serializer_init call fails for any reason the previous initialization state shall be preserved. The initialized state shall only be changed on a succesfull Init.] */
+            /* Codes_SRS_SCHEMALIB_99_075:[When an serializer_init call fails for any reason the previous initialization state shall be preserved. The initialized state shall only be changed on a successful Init.] */
             g_AgentState = AGENT_INITIALIZED;
 
             /* Codes_SRS_SCHEMALIB_99_073:[On success serializer_init shall return SERIALIZER_OK.] */

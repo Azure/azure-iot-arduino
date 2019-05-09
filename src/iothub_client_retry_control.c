@@ -62,7 +62,7 @@ static void* retry_control_clone_option(const char* name, const void* value)
 	}
 	else
 	{
-		LogError("Failed to clone option (option with name '%s' is not suppported)", name);
+		LogError("Failed to clone option (option with name '%s' is not supported)", name);
 		result = NULL;
 	}
 
@@ -82,7 +82,7 @@ static void retry_control_destroy_option(const char* name, const void* value)
 	}
 	else
 	{
-		LogError("Failed to destroy option (option with name '%s' is not suppported)", name);
+		LogError("Failed to destroy option (option with name '%s' is not supported)", name);
 	}
 }
 
@@ -334,7 +334,7 @@ int retry_control_should_retry(RETRY_CONTROL_HANDLE retry_control_handle, RETRY_
 	{
 		RETRY_CONTROL_INSTANCE* retry_control = (RETRY_CONTROL_INSTANCE*)retry_control_handle;
 
-		// Codes_SRS_IOTHUB_CLIENT_RETRY_CONTROL_09_027: [If `retry_control->policy` is IOTHUB_CLIENT_RETRY_NONE, retry_action shall be set to RETRY_ACTION_STOP_RETRYING and return immediatelly with result 0]
+		// Codes_SRS_IOTHUB_CLIENT_RETRY_CONTROL_09_027: [If `retry_control->policy` is IOTHUB_CLIENT_RETRY_NONE, retry_action shall be set to RETRY_ACTION_STOP_RETRYING and return immediately with result 0]
 		if (retry_control->policy == IOTHUB_CLIENT_RETRY_NONE)
 		{
 			*retry_action = RETRY_ACTION_STOP_RETRYING;
@@ -449,7 +449,7 @@ int retry_control_set_option(RETRY_CONTROL_HANDLE retry_control_handle, const ch
 		// Codes_SRS_IOTHUB_CLIENT_RETRY_CONTROL_09_043: [If `name` is not a supported option, `retry_control_set_option` shall fail and return non-zero]
 		else
 		{
-			LogError("messenger_set_option failed (option with name '%s' is not suppported)", name);
+			LogError("messenger_set_option failed (option with name '%s' is not supported)", name);
 			result = __FAILURE__;
 		}
 	}
