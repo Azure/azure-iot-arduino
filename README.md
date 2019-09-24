@@ -50,6 +50,8 @@ You should have the following ready before beginning with any board:
 ### ESP8266
 ##### Sparkfun Thing, Adafruit Feather Huzzah, or generic ESP8266 board
 
+**Please refer to the [Espressif Azure IoT GitHub repository](https://github.com/espressif/esp-azure) to use the ESP8266 with Azure IoT while this repository is being worked on.** 
+
 1. Install esp8266 board support into your Arduino IDE.
     * Start Arduino and open Preferences window.
     * Enter `http://arduino.esp8266.com/stable/package_esp8266com_index.json` into Additional Board Manager URLs field. You can add multiple URLs, separating them with commas.
