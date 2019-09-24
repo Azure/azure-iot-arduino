@@ -6,6 +6,8 @@ For more information see the
 
 # AzureIoTHub - Azure IoT Hub library for Arduino
 
+**There are known issues with this repository that are currently being worked on. Please refer to the [Espressif Azure IoT GitHub repository](https://github.com/espressif/esp-azure) to use the ESP8266 with Azure IoT.** 
+
 This library is a port of the 
 [Microsoft Azure IoT device SDK for C](https://github.com/Azure/azure-iot-sdks/blob/master/c/readme.md)
  to Arduino. It allows you to use several Arduino compatible boards with Azure IoT Hub.
@@ -47,6 +49,8 @@ You should have the following ready before beginning with any board:
 
 ### ESP8266
 ##### Sparkfun Thing, Adafruit Feather Huzzah, or generic ESP8266 board
+
+**Please refer to the [Espressif Azure IoT GitHub repository](https://github.com/espressif/esp-azure) to use the ESP8266 with Azure IoT while this repository is being worked on.** 
 
 1. Install esp8266 board support into your Arduino IDE.
     * Start Arduino and open Preferences window.
