@@ -6,7 +6,7 @@ For more information see the
 
 # AzureIoTHub - Azure IoT Hub library for Arduino
 
-** There are known issues with this repository that are currently being worked on. Please refer to the [Espressif Azure IoT GitHub repository] to use the ESP8266 with Azure IoT. ** 
+**There are known issues with this repository that are currently being worked on. Please refer to the [Espressif Azure IoT GitHub repository] to use the ESP8266 with Azure IoT.** 
 
 This library is a port of the 
 [Microsoft Azure IoT device SDK for C](https://github.com/Azure/azure-iot-sdks/blob/master/c/readme.md)
