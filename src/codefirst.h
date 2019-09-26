@@ -105,7 +105,7 @@ typedef struct REFLECTION_DESIRED_PROPERTY_TAG
     void(*desiredPropertDeinitialize)(void* destination);
     const char* name;
     const char* type;
-    int(*FromAGENT_DATA_TYPE)(const AGENT_DATA_TYPE* source, void* dest); /*destination is "something" everytime. When the DESIRED_PROPERTY is a MODEL, the function is empty*/
+    int(*FromAGENT_DATA_TYPE)(const AGENT_DATA_TYPE* source, void* dest); /*destination is "something" every time. When the DESIRED_PROPERTY is a MODEL, the function is empty*/
     size_t offset;
     size_t size;
     const char* modelName;

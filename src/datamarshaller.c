@@ -303,7 +303,7 @@ DATA_MARSHALLER_RESULT DataMarshaller_SendData_ReportedProperties(DATA_MARSHALLE
                                 }
                                 else
                                 {
-                                    /*Codes_SRS_DATA_MARSHALLER_02_016: [ DataMarshaller_SendData_ReportedProperties shall replace all the occurences of / with . in the reported property paths. ]*/
+                                    /*Codes_SRS_DATA_MARSHALLER_02_016: [ DataMarshaller_SendData_ReportedProperties shall replace all the occurrences of / with . in the reported property paths. ]*/
                                     char *whereIsSlash;
                                     while ((whereIsSlash = strchr(leftSide, '/')) != NULL)
                                     {

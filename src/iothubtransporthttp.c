@@ -663,7 +663,7 @@ static IOTHUB_DEVICE_HANDLE* get_perDeviceDataItem(IOTHUB_DEVICE_HANDLE deviceHa
     }
     else
     {
-        /* sucessfully found device in list. */
+        /* successfully found device in list. */
     }
 
     return listItem;
@@ -2078,7 +2078,7 @@ static void DoMessages(HTTPTRANSPORT_HANDLE_DATA* handleData, HTTPTRANSPORT_PERD
                     }
                     if (r == HTTPAPIEX_OK)
                     {
-                        /*HTTP dialogue was succesfull*/
+                        /*HTTP dialogue was successful*/
                         if (timeNow == (time_t)(-1))
                         {
                             deviceData->isFirstPoll = true;

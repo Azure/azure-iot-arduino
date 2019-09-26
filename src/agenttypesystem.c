@@ -1273,7 +1273,7 @@ void Destroy_AGENT_DATA_TYPE(AGENT_DATA_TYPE* agentData)
                 break;
             }
         }
-        agentData->type = EDM_NO_TYPE; /*mark as detroyed*/
+        agentData->type = EDM_NO_TYPE; /*mark as destroyed*/
     }
 }
 
