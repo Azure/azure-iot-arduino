@@ -10,7 +10,7 @@
 #include "azure_c_shared_utility/vector.h"
 
 
-DEFINE_ENUM_STRINGS(SCHEMA_RESULT, SCHEMA_RESULT_VALUES);
+MU_DEFINE_ENUM_STRINGS_WITHOUT_INVALID(SCHEMA_RESULT, SCHEMA_RESULT_VALUES);
 
 typedef struct SCHEMA_PROPERTY_HANDLE_DATA_TAG
 {
@@ -134,7 +134,7 @@ static void DestroyAction(SCHEMA_ACTION_HANDLE actionHandle)
     if (action != NULL)
     {
         size_t j;
-        
+
         for (j = 0; j < action->ArgumentCount; j++)
         {
             DestroyActionArgument(action->ArgumentHandles[j]);
@@ -257,7 +257,7 @@ static SCHEMA_RESULT AddModelProperty(SCHEMA_MODEL_TYPE_HANDLE_DATA* modelType, 
         (type == NULL))
     {
         result = SCHEMA_INVALID_ARG;
-        LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
     }
     else
     {
@@ -276,7 +276,7 @@ static SCHEMA_RESULT AddModelProperty(SCHEMA_MODEL_TYPE_HANDLE_DATA* modelType, 
         if (i < modelType->PropertyCount)
         {
             result = SCHEMA_DUPLICATE_ELEMENT;
-            LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+            LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
         }
         else
         {
@@ -285,7 +285,7 @@ static SCHEMA_RESULT AddModelProperty(SCHEMA_MODEL_TYPE_HANDLE_DATA* modelType, 
             {
                 /* Codes_SRS_SCHEMA_99_014:[On any other error, Schema_AddModelProperty shall return SCHEMA_ERROR.] */
                 result = SCHEMA_ERROR;
-                LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+                LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
             }
             else
             {
@@ -296,7 +296,7 @@ static SCHEMA_RESULT AddModelProperty(SCHEMA_MODEL_TYPE_HANDLE_DATA* modelType, 
                 {
                     /* Codes_SRS_SCHEMA_99_014:[On any other error, Schema_AddModelProperty shall return SCHEMA_ERROR.] */
                     result = SCHEMA_ERROR;
-                    LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+                    LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
                 }
                 else
                 {
@@ -305,7 +305,7 @@ static SCHEMA_RESULT AddModelProperty(SCHEMA_MODEL_TYPE_HANDLE_DATA* modelType, 
                         /* Codes_SRS_SCHEMA_99_014:[On any other error, Schema_AddModelProperty shall return SCHEMA_ERROR.] */
                         free(newProperty);
                         result = SCHEMA_ERROR;
-                        LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+                        LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
                     }
                     else if (mallocAndStrcpy_s((char**)&newProperty->PropertyType, type) != 0)
                     {
@@ -313,7 +313,7 @@ static SCHEMA_RESULT AddModelProperty(SCHEMA_MODEL_TYPE_HANDLE_DATA* modelType, 
                         free((void*)newProperty->PropertyName);
                         free(newProperty);
                         result = SCHEMA_ERROR;
-                        LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+                        LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
                     }
                     else
                     {
@@ -328,15 +328,22 @@ static SCHEMA_RESULT AddModelProperty(SCHEMA_MODEL_TYPE_HANDLE_DATA* modelType, 
                 /* If possible, reduce the memory of over allocation */
                 if (result != SCHEMA_OK)
                 {
-                    SCHEMA_PROPERTY_HANDLE* oldProperties = (SCHEMA_PROPERTY_HANDLE*)realloc(modelType->Properties, sizeof(SCHEMA_PROPERTY_HANDLE) * modelType->PropertyCount);
-                    if (oldProperties == NULL)
+                    if (modelType->PropertyCount > 0)
                     {
-                        result = SCHEMA_ERROR;
-                        LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+                        SCHEMA_PROPERTY_HANDLE *oldProperties = (SCHEMA_PROPERTY_HANDLE *)realloc(modelType->Properties, sizeof(SCHEMA_PROPERTY_HANDLE) * modelType->PropertyCount);
+                        if (oldProperties == NULL)
+                        {
+                            result = SCHEMA_ERROR;
+                            LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
+                        }
+                        else
+                        {
+                            modelType->Properties = oldProperties;
+                        }
                     }
                     else
                     {
-                        modelType->Properties = oldProperties;
+                        modelType->Properties = NULL;
                     }
                 }
             }
@@ -378,26 +385,26 @@ SCHEMA_HANDLE Schema_Create(const char* schemaNamespace, void* metadata)
         {
             /* Codes_SRS_SCHEMA_99_003:[On failure, NULL shall be returned.] */
             result = NULL;
-            LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+            LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
         }
         else if ((result = (SCHEMA_HANDLE_DATA*)malloc(sizeof(SCHEMA_HANDLE_DATA))) == NULL)
         {
             /* Codes_SRS_SCHEMA_99_003:[On failure, NULL shall be returned.] */
-            LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+            LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
         }
         else if (mallocAndStrcpy_s((char**)&result->Namespace, schemaNamespace) != 0)
         {
             /* Codes_SRS_SCHEMA_99_003:[On failure, NULL shall be returned.] */
             free(result);
             result = NULL;
-            LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+            LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
         }
         else if (VECTOR_push_back(g_schemas, &result, 1) != 0)
         {
             free((void*)result->Namespace);
             free(result);
             result = NULL;
-            LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+            LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
         }
         else
         {
@@ -431,7 +438,7 @@ SCHEMA_HANDLE Schema_GetSchemaByNamespace(const char* schemaNamespace)
         SCHEMA_HANDLE* handle = (g_schemas==NULL)?NULL:(SCHEMA_HANDLE*)VECTOR_find_if(g_schemas, (PREDICATE_FUNCTION)SchemaNamespacesMatch, schemaNamespace);
         if (handle != NULL)
         {
-            /* Codes_SRS_SCHEMA_99_148: [Schema_GetSchemaByNamespace shall search all active schemas and return the schema with the 
+            /* Codes_SRS_SCHEMA_99_148: [Schema_GetSchemaByNamespace shall search all active schemas and return the schema with the
                namespace given by the schemaNamespace argument.] */
             result = *handle;
         }
@@ -548,7 +555,7 @@ SCHEMA_RESULT Schema_AddDeviceRef(SCHEMA_MODEL_TYPE_HANDLE modelTypeHandle)
     {
         /* Codes_SRS_SCHEMA_07_187: [Schema_AddDeviceRef shall return SCHEMA_INVALID_ARG if modelTypeHandle is NULL.] */
         result = SCHEMA_INVALID_ARG;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
     }
     else
     {
@@ -567,7 +574,7 @@ SCHEMA_RESULT Schema_ReleaseDeviceRef(SCHEMA_MODEL_TYPE_HANDLE modelTypeHandle)
     if (modelTypeHandle == NULL)
     {
         result = SCHEMA_INVALID_ARG;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
     }
     else
     {
@@ -581,7 +588,7 @@ SCHEMA_RESULT Schema_ReleaseDeviceRef(SCHEMA_MODEL_TYPE_HANDLE modelTypeHandle)
         else
         {
 result = SCHEMA_DEVICE_COUNT_ZERO;
-LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
         }
     }
     return result;
@@ -598,7 +605,7 @@ SCHEMA_MODEL_TYPE_HANDLE Schema_CreateModelType(SCHEMA_HANDLE schemaHandle, cons
     {
         /* Codes_SRS_SCHEMA_99_009:[On failure, Schema_CreateModelType shall return NULL.] */
         result = NULL;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -629,7 +636,7 @@ SCHEMA_MODEL_TYPE_HANDLE Schema_CreateModelType(SCHEMA_HANDLE schemaHandle, cons
             {
                 /* Codes_SRS_SCHEMA_99_009:[On failure, Schema_CreateModelType shall return NULL.] */
                 result = NULL;
-                LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+                LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
             }
             else
             {
@@ -641,14 +648,14 @@ SCHEMA_MODEL_TYPE_HANDLE Schema_CreateModelType(SCHEMA_HANDLE schemaHandle, cons
 
                     /* Codes_SRS_SCHEMA_99_009:[On failure, Schema_CreateModelType shall return NULL.] */
                     result = NULL;
-                    LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+                    LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
                 }
                 else if (mallocAndStrcpy_s((char**)&modelType->Name, modelName) != 0)
                 {
                     /* Codes_SRS_SCHEMA_99_009:[On failure, Schema_CreateModelType shall return NULL.] */
                     result = NULL;
                     free(modelType);
-                    LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+                    LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
                 }
                 else
                 {
@@ -722,7 +729,7 @@ SCHEMA_MODEL_TYPE_HANDLE Schema_CreateModelType(SCHEMA_HANDLE schemaHandle, cons
                     SCHEMA_MODEL_TYPE_HANDLE* oldModelTypes = (SCHEMA_MODEL_TYPE_HANDLE*)realloc(schema->ModelTypes, sizeof(SCHEMA_MODEL_TYPE_HANDLE) * schema->ModelTypeCount);
                     if (oldModelTypes == NULL)
                     {
-                        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+                        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
                     }
                     else
                     {
@@ -852,7 +859,7 @@ SCHEMA_ACTION_HANDLE Schema_CreateModelAction(SCHEMA_MODEL_TYPE_HANDLE modelType
         (actionName == NULL))
     {
         result = NULL;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -872,7 +879,7 @@ SCHEMA_ACTION_HANDLE Schema_CreateModelAction(SCHEMA_MODEL_TYPE_HANDLE modelType
         if (i < modelType->ActionCount)
         {
             result = NULL;
-            LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_DUPLICATE_ELEMENT));
+            LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_DUPLICATE_ELEMENT));
         }
         else
         {
@@ -882,7 +889,7 @@ SCHEMA_ACTION_HANDLE Schema_CreateModelAction(SCHEMA_MODEL_TYPE_HANDLE modelType
             {
                 /* Codes_SRS_SCHEMA_99_106: [On any other error, Schema_CreateModelAction shall return NULL.]*/
                 result = NULL;
-                LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+                LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
             }
             else
             {
@@ -894,7 +901,7 @@ SCHEMA_ACTION_HANDLE Schema_CreateModelAction(SCHEMA_MODEL_TYPE_HANDLE modelType
                 {
                     /* Codes_SRS_SCHEMA_99_106: [On any other error, Schema_CreateModelAction shall return NULL.]*/
                     result = NULL;
-                    LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+                    LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
                 }
                 else
                 {
@@ -903,7 +910,7 @@ SCHEMA_ACTION_HANDLE Schema_CreateModelAction(SCHEMA_MODEL_TYPE_HANDLE modelType
                         /* Codes_SRS_SCHEMA_99_106: [On any other error, Schema_CreateModelAction shall return NULL.]*/
                         free(newAction);
                         result = NULL;
-                        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+                        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
                     }
                     else
                     {
@@ -918,14 +925,21 @@ SCHEMA_ACTION_HANDLE Schema_CreateModelAction(SCHEMA_MODEL_TYPE_HANDLE modelType
                     /* If possible, reduce the memory of over allocation */
                     if (result == NULL)
                     {
-                        SCHEMA_ACTION_HANDLE* oldActions = (SCHEMA_ACTION_HANDLE*)realloc(modelType->Actions, sizeof(SCHEMA_ACTION_HANDLE) * modelType->ActionCount);
-                        if (oldActions == NULL)
+                        if (modelType->ActionCount > 0)
                         {
-                            LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+                            SCHEMA_ACTION_HANDLE *oldActions = (SCHEMA_ACTION_HANDLE *)realloc(modelType->Actions, sizeof(SCHEMA_ACTION_HANDLE) * modelType->ActionCount);
+                            if (oldActions == NULL)
+                            {
+                                LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+                            }
+                            else
+                            {
+                                modelType->Actions = oldActions;
+                            }
                         }
                         else
                         {
-                            modelType->Actions = oldActions;
+                            modelType->Actions = NULL;
                         }
                     }
                 }
@@ -1031,7 +1045,7 @@ SCHEMA_RESULT Schema_AddModelActionArgument(SCHEMA_ACTION_HANDLE actionHandle, c
         (argumentType == NULL))
     {
         result = SCHEMA_INVALID_ARG;
-        LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
     }
     else
     {
@@ -1052,7 +1066,7 @@ SCHEMA_RESULT Schema_AddModelActionArgument(SCHEMA_ACTION_HANDLE actionHandle, c
         if (i < action->ArgumentCount)
         {
             result = SCHEMA_DUPLICATE_ELEMENT;
-            LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+            LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
         }
         else
         {
@@ -1062,16 +1076,20 @@ SCHEMA_RESULT Schema_AddModelActionArgument(SCHEMA_ACTION_HANDLE actionHandle, c
             {
                 /* Codes_SRS_SCHEMA_99_112: [On any other error, Schema_ AddModelActionArgumet shall return SCHEMA_ERROR.] */
                 result = SCHEMA_ERROR;
-                LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+                LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
             }
             else
             {
+                action->ArgumentHandles = newArguments;
+
                 SCHEMA_ACTION_ARGUMENT_HANDLE_DATA* newActionArgument;
+
+                action->ArgumentHandles = newArguments;
                 if ((newActionArgument = (SCHEMA_ACTION_ARGUMENT_HANDLE_DATA*)malloc(sizeof(SCHEMA_ACTION_ARGUMENT_HANDLE_DATA))) == NULL)
                 {
                     /* Codes_SRS_SCHEMA_99_112: [On any other error, Schema_ AddModelActionArgumet shall return SCHEMA_ERROR.] */
                     result = SCHEMA_ERROR;
-                    LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+                    LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
                 }
                 else
                 {
@@ -1080,7 +1098,7 @@ SCHEMA_RESULT Schema_AddModelActionArgument(SCHEMA_ACTION_HANDLE actionHandle, c
                         /* Codes_SRS_SCHEMA_99_112: [On any other error, Schema_ AddModelActionArgumet shall return SCHEMA_ERROR.] */
                         free(newActionArgument);
                         result = SCHEMA_ERROR;
-                        LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+                        LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
                     }
                     else if (mallocAndStrcpy_s((char**)&newActionArgument->Type, argumentType) != 0)
                     {
@@ -1088,11 +1106,10 @@ SCHEMA_RESULT Schema_AddModelActionArgument(SCHEMA_ACTION_HANDLE actionHandle, c
                         free((void*)newActionArgument->Name);
                         free(newActionArgument);
                         result = SCHEMA_ERROR;
-                        LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+                        LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
                     }
                     else
                     {
-                        action->ArgumentHandles = newArguments;
                         /* Codes_SRS_SCHEMA_99_119: [Schema_AddModelActionArgument shall preserve the order of the action arguments according to the order in which they were added, starting with index 0 for the first added argument.] */
                         action->ArgumentHandles[action->ArgumentCount] = newActionArgument;
                         action->ArgumentCount++;
@@ -1105,14 +1122,21 @@ SCHEMA_RESULT Schema_AddModelActionArgument(SCHEMA_ACTION_HANDLE actionHandle, c
                 /* If possible, reduce the memory of over allocation */
                 if (result == SCHEMA_ERROR)
                 {
-                    SCHEMA_ACTION_ARGUMENT_HANDLE* oldArguments = (SCHEMA_ACTION_ARGUMENT_HANDLE*)realloc(action->ArgumentHandles, sizeof(SCHEMA_ACTION_ARGUMENT_HANDLE) * action->ArgumentCount);
-                    if (oldArguments == NULL)
+                    if (action->ArgumentCount > 0)
                     {
-                        LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+                        SCHEMA_ACTION_ARGUMENT_HANDLE *oldArguments = (SCHEMA_ACTION_ARGUMENT_HANDLE *)realloc(action->ArgumentHandles, sizeof(SCHEMA_ACTION_ARGUMENT_HANDLE) * action->ArgumentCount);
+                        if (oldArguments == NULL)
+                        {
+                            LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+                        }
+                        else
+                        {
+                            action->ArgumentHandles = oldArguments;
+                        }
                     }
                     else
                     {
-                        action->ArgumentHandles = oldArguments;
+                        action->ArgumentHandles = NULL;
                     }
                 }
             }
@@ -1140,7 +1164,7 @@ SCHEMA_RESULT Schema_AddModelMethodArgument(SCHEMA_METHOD_HANDLE methodHandle, c
         (argumentType == NULL))
     {
         result = SCHEMA_INVALID_ARG;
-        LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
     }
     else
     {
@@ -1215,7 +1239,7 @@ SCHEMA_PROPERTY_HANDLE Schema_GetModelPropertyByName(SCHEMA_MODEL_TYPE_HANDLE mo
         (propertyName == NULL))
     {
         result = NULL;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -1236,7 +1260,7 @@ SCHEMA_PROPERTY_HANDLE Schema_GetModelPropertyByName(SCHEMA_MODEL_TYPE_HANDLE mo
         {
             /* Codes_SRS_SCHEMA_99_038:[Schema_GetModelPropertyByName shall return NULL if unable to find a matching property or if any of the arguments are NULL.] */
             result = NULL;
-            LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ELEMENT_NOT_FOUND));
+            LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ELEMENT_NOT_FOUND));
         }
         else
         {
@@ -1331,7 +1355,7 @@ SCHEMA_REPORTED_PROPERTY_HANDLE Schema_GetModelReportedPropertyByIndex(SCHEMA_MO
     /*Codes_SRS_SCHEMA_02_015: [ If argument modelTypeHandle is NULL then Schema_GetModelReportedPropertyByIndex shall fail and return NULL. ]*/
     if (modelTypeHandle == NULL)
     {
-        LogError("invalid argument SCHEMA_MODEL_TYPE_HANDLE modelTypeHandle=%p, size_t index=%zu", modelTypeHandle, index);
+        LogError("invalid argument SCHEMA_MODEL_TYPE_HANDLE modelTypeHandle=%p, size_t index=%lu", modelTypeHandle, (unsigned long)index);
         result = NULL;
     }
     else
@@ -1342,7 +1366,7 @@ SCHEMA_REPORTED_PROPERTY_HANDLE Schema_GetModelReportedPropertyByIndex(SCHEMA_MO
         /*Codes_SRS_SCHEMA_02_017: [ Otherwise Schema_GetModelReportedPropertyByIndex shall fail and return NULL. ]*/
         if ((result = VECTOR_element(modelType->reportedProperties, index)) == NULL)
         {
-            LogError("index %zu is invalid", index);
+            LogError("index %lu is invalid", (unsigned long)index);
         }
         else
         {
@@ -1362,7 +1386,7 @@ SCHEMA_PROPERTY_HANDLE Schema_GetModelPropertyByIndex(SCHEMA_MODEL_TYPE_HANDLE m
         (index >= modelType->PropertyCount))
     {
         result = NULL;
-        LogError("(Error code: %s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code: %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -1383,7 +1407,7 @@ SCHEMA_ACTION_HANDLE Schema_GetModelActionByName(SCHEMA_MODEL_TYPE_HANDLE modelT
         (actionName == NULL))
     {
         result = NULL;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -1404,7 +1428,7 @@ SCHEMA_ACTION_HANDLE Schema_GetModelActionByName(SCHEMA_MODEL_TYPE_HANDLE modelT
         {
             /* Codes_SRS_SCHEMA_99_041:[Schema_GetModelActionByName shall return NULL if unable to find a matching action, if any of the arguments are NULL.] */
             result = NULL;
-            LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ELEMENT_NOT_FOUND));
+            LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ELEMENT_NOT_FOUND));
         }
         else
         {
@@ -1463,7 +1487,7 @@ SCHEMA_RESULT Schema_GetModelActionCount(SCHEMA_MODEL_TYPE_HANDLE modelTypeHandl
         (actionCount == NULL))
     {
         result = SCHEMA_INVALID_ARG;
-        LogError("(result=%s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+        LogError("(result=%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
     }
     else
     {
@@ -1490,7 +1514,7 @@ SCHEMA_ACTION_HANDLE Schema_GetModelActionByIndex(SCHEMA_MODEL_TYPE_HANDLE model
         (index >= modelType->ActionCount))
     {
         result = NULL;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -1510,7 +1534,7 @@ const char* Schema_GetModelActionName(SCHEMA_ACTION_HANDLE actionHandle)
     if (actionHandle == NULL)
     {
         result = NULL;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -1531,7 +1555,7 @@ SCHEMA_RESULT Schema_GetModelActionArgumentCount(SCHEMA_ACTION_HANDLE actionHand
         (argumentCount == NULL))
     {
         result = SCHEMA_INVALID_ARG;
-        LogError("(result=%s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+        LogError("(result=%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
     }
     else
     {
@@ -1558,7 +1582,7 @@ SCHEMA_RESULT Schema_GetModelMethodArgumentCount(SCHEMA_METHOD_HANDLE methodHand
         (argumentCount == NULL))
     {
         result = SCHEMA_INVALID_ARG;
-        LogError("(result=%s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+        LogError("(result=%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
     }
     else
     {
@@ -1580,7 +1604,7 @@ SCHEMA_ACTION_ARGUMENT_HANDLE Schema_GetModelActionArgumentByName(SCHEMA_ACTION_
         (actionArgumentName == NULL))
     {
         result = NULL;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -1601,7 +1625,7 @@ SCHEMA_ACTION_ARGUMENT_HANDLE Schema_GetModelActionArgumentByName(SCHEMA_ACTION_
         {
             /* Codes_SRS_SCHEMA_99_118: [Schema_GetModelActionArgumentByName shall return NULL if unable to find a matching argument or if any of the arguments are NULL.] */
             result = NULL;
-            LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ELEMENT_NOT_FOUND));
+            LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ELEMENT_NOT_FOUND));
         }
         else
         {
@@ -1623,7 +1647,7 @@ SCHEMA_ACTION_ARGUMENT_HANDLE Schema_GetModelActionArgumentByIndex(SCHEMA_ACTION
         (argumentIndex >= modelAction->ArgumentCount))
     {
         result = NULL;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -1642,7 +1666,7 @@ SCHEMA_METHOD_ARGUMENT_HANDLE Schema_GetModelMethodArgumentByIndex(SCHEMA_METHOD
     if (methodHandle == NULL)
     {
         result = NULL;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -1670,7 +1694,7 @@ const char* Schema_GetActionArgumentName(SCHEMA_ACTION_ARGUMENT_HANDLE actionArg
     if (actionArgumentHandle == NULL)
     {
         result = NULL;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -1688,7 +1712,7 @@ const char* Schema_GetMethodArgumentName(SCHEMA_METHOD_ARGUMENT_HANDLE methodArg
     if (methodArgumentHandle == NULL)
     {
         result = NULL;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -1706,7 +1730,7 @@ const char* Schema_GetActionArgumentType(SCHEMA_ACTION_ARGUMENT_HANDLE actionArg
     if (actionArgumentHandle == NULL)
     {
         result = NULL;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -1745,7 +1769,7 @@ SCHEMA_STRUCT_TYPE_HANDLE Schema_CreateStructType(SCHEMA_HANDLE schemaHandle, co
         (typeName == NULL))
     {
         result = NULL;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -1765,7 +1789,7 @@ SCHEMA_STRUCT_TYPE_HANDLE Schema_CreateStructType(SCHEMA_HANDLE schemaHandle, co
         if (i < schema->StructTypeCount)
         {
             result = NULL;
-            LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_DUPLICATE_ELEMENT));
+            LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_DUPLICATE_ELEMENT));
         }
         else
         {
@@ -1774,7 +1798,7 @@ SCHEMA_STRUCT_TYPE_HANDLE Schema_CreateStructType(SCHEMA_HANDLE schemaHandle, co
             {
                 /* Codes_SRS_SCHEMA_99_066:[On any other error, Schema_CreateStructType shall return NULL.] */
                 result = NULL;
-                LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+                LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
             }
             else
             {
@@ -1783,14 +1807,14 @@ SCHEMA_STRUCT_TYPE_HANDLE Schema_CreateStructType(SCHEMA_HANDLE schemaHandle, co
                 {
                     /* Codes_SRS_SCHEMA_99_066:[On any other error, Schema_CreateStructType shall return NULL.] */
                     result = NULL;
-                    LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+                    LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
                 }
                 else if (mallocAndStrcpy_s((char**)&structType->Name, typeName) != 0)
                 {
                     /* Codes_SRS_SCHEMA_99_066:[On any other error, Schema_CreateStructType shall return NULL.] */
                     result = NULL;
                     free(structType);
-                    LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+                    LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
                 }
                 else
                 {
@@ -1807,15 +1831,22 @@ SCHEMA_STRUCT_TYPE_HANDLE Schema_CreateStructType(SCHEMA_HANDLE schemaHandle, co
                 /* If possible, reduce the memory of over allocation */
                 if (result == NULL)
                 {
-                    SCHEMA_STRUCT_TYPE_HANDLE* oldStructTypes = (SCHEMA_STRUCT_TYPE_HANDLE*)realloc(schema->StructTypes, sizeof(SCHEMA_STRUCT_TYPE_HANDLE) * schema->StructTypeCount);
-                    if (oldStructTypes == NULL)
+                    if (schema->StructTypeCount > 0)
                     {
-                        result = NULL;
-                        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+                        SCHEMA_STRUCT_TYPE_HANDLE *oldStructTypes = (SCHEMA_STRUCT_TYPE_HANDLE *)realloc(schema->StructTypes, sizeof(SCHEMA_STRUCT_TYPE_HANDLE) * schema->StructTypeCount);
+                        if (oldStructTypes == NULL)
+                        {
+                            result = NULL;
+                            LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ERROR));
+                        }
+                        else
+                        {
+                            schema->StructTypes = oldStructTypes;
+                        }
                     }
                     else
                     {
-                        schema->StructTypes = oldStructTypes;
+                        schema->StructTypes = NULL;
                     }
                 }
             }
@@ -1833,14 +1864,14 @@ const char* Schema_GetStructTypeName(SCHEMA_STRUCT_TYPE_HANDLE structTypeHandle)
     if (structTypeHandle == NULL)
     {
         result = NULL;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
         /* Codes_SRS_SCHEMA_99_135: [Schema_GetStructTypeName shall return the name of a struct type identified by the structTypeHandle argument.] */
         result = ((SCHEMA_STRUCT_TYPE_HANDLE_DATA*)structTypeHandle)->Name;
     }
-    
+
     return result;
 }
 
@@ -1853,7 +1884,7 @@ SCHEMA_RESULT Schema_GetStructTypeCount(SCHEMA_HANDLE schemaHandle, size_t* stru
         (structTypeCount == NULL))
     {
         result = SCHEMA_INVALID_ARG;
-        LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
     }
     else
     {
@@ -1878,7 +1909,7 @@ SCHEMA_STRUCT_TYPE_HANDLE Schema_GetStructTypeByName(SCHEMA_HANDLE schemaHandle,
         (name == NULL))
     {
         result = NULL;
-        LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -1898,7 +1929,7 @@ SCHEMA_STRUCT_TYPE_HANDLE Schema_GetStructTypeByName(SCHEMA_HANDLE schemaHandle,
         {
             /* Codes_SRS_SCHEMA_99_069:[Schema_GetStructTypeByName shall return NULL if unable to find a matching struct or if any of the arguments are NULL.] */
             result = NULL;
-            LogError("(Error code:%s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ELEMENT_NOT_FOUND));
+            LogError("(Error code:%s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ELEMENT_NOT_FOUND));
         }
         else
         {
@@ -1920,7 +1951,7 @@ SCHEMA_STRUCT_TYPE_HANDLE Schema_GetStructTypeByIndex(SCHEMA_HANDLE schemaHandle
         (index >= schema->StructTypeCount))
     {
         result = NULL;
-        LogError("(Error code: %s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code: %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -1942,7 +1973,7 @@ SCHEMA_RESULT Schema_AddStructTypeProperty(SCHEMA_STRUCT_TYPE_HANDLE structTypeH
         (propertyType == NULL))
     {
         result = SCHEMA_INVALID_ARG;
-        LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
     }
     else
     {
@@ -1962,7 +1993,7 @@ SCHEMA_RESULT Schema_AddStructTypeProperty(SCHEMA_STRUCT_TYPE_HANDLE structTypeH
         if (i < structType->PropertyCount)
         {
             result = SCHEMA_DUPLICATE_ELEMENT;
-            LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+            LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
         }
         else
         {
@@ -1970,7 +2001,7 @@ SCHEMA_RESULT Schema_AddStructTypeProperty(SCHEMA_STRUCT_TYPE_HANDLE structTypeH
             if (newProperties == NULL)
             {
                 result = SCHEMA_ERROR;
-                LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+                LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
             }
             else
             {
@@ -1980,7 +2011,7 @@ SCHEMA_RESULT Schema_AddStructTypeProperty(SCHEMA_STRUCT_TYPE_HANDLE structTypeH
                 if ((newProperty = (SCHEMA_PROPERTY_HANDLE_DATA*)malloc(sizeof(SCHEMA_PROPERTY_HANDLE_DATA))) == NULL)
                 {
                     result = SCHEMA_ERROR;
-                    LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+                    LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
                 }
                 else
                 {
@@ -1988,14 +2019,14 @@ SCHEMA_RESULT Schema_AddStructTypeProperty(SCHEMA_STRUCT_TYPE_HANDLE structTypeH
                     {
                         free(newProperty);
                         result = SCHEMA_ERROR;
-                        LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+                        LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
                     }
                     else if (mallocAndStrcpy_s((char**)&newProperty->PropertyType, propertyType) != 0)
                     {
                         free((void*)newProperty->PropertyName);
                         free(newProperty);
                         result = SCHEMA_ERROR;
-                        LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+                        LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
                     }
                     else
                     {
@@ -2011,15 +2042,22 @@ SCHEMA_RESULT Schema_AddStructTypeProperty(SCHEMA_STRUCT_TYPE_HANDLE structTypeH
                 /* If possible, reduce the memory of over allocation */
                 if (result != SCHEMA_OK)
                 {
-                    SCHEMA_PROPERTY_HANDLE* oldProperties = (SCHEMA_PROPERTY_HANDLE*)realloc(structType->Properties, sizeof(SCHEMA_PROPERTY_HANDLE) * structType->PropertyCount);
-                    if (oldProperties == NULL)
+                    if (structType->PropertyCount > 0)
                     {
-                        result = SCHEMA_ERROR;
-                        LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+                        SCHEMA_PROPERTY_HANDLE *oldProperties = (SCHEMA_PROPERTY_HANDLE *)realloc(structType->Properties, sizeof(SCHEMA_PROPERTY_HANDLE) * structType->PropertyCount);
+                        if (oldProperties == NULL)
+                        {
+                            result = SCHEMA_ERROR;
+                            LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
+                        }
+                        else
+                        {
+                            structType->Properties = oldProperties;
+                        }
                     }
                     else
                     {
-                        structType->Properties = oldProperties;
+                        structType->Properties = NULL;
                     }
                 }
             }
@@ -2038,7 +2076,7 @@ SCHEMA_PROPERTY_HANDLE Schema_GetStructTypePropertyByName(SCHEMA_STRUCT_TYPE_HAN
         (propertyName == NULL))
     {
         result = NULL;
-        LogError("(Error code: %s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code: %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -2058,7 +2096,7 @@ SCHEMA_PROPERTY_HANDLE Schema_GetStructTypePropertyByName(SCHEMA_STRUCT_TYPE_HAN
         if (i == structType->PropertyCount)
         {
             result = NULL;
-            LogError("(Error code: %s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ELEMENT_NOT_FOUND));
+            LogError("(Error code: %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_ELEMENT_NOT_FOUND));
         }
         /* Codes_SRS_SCHEMA_99_075:[Schema_GetStructTypePropertyByName shall return a non-NULL handle corresponding to a property identified by the structTypeHandle and propertyName.] */
         else
@@ -2079,7 +2117,7 @@ SCHEMA_RESULT Schema_GetStructTypePropertyCount(SCHEMA_STRUCT_TYPE_HANDLE struct
         (propertyCount == NULL))
     {
         result = SCHEMA_INVALID_ARG;
-        LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
     }
     else
     {
@@ -2106,7 +2144,7 @@ SCHEMA_PROPERTY_HANDLE Schema_GetStructTypePropertyByIndex(SCHEMA_STRUCT_TYPE_HA
         (index >= structType->PropertyCount))
     {
         result = NULL;
-        LogError("(Error code: %s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code: %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -2126,7 +2164,7 @@ const char* Schema_GetPropertyName(SCHEMA_PROPERTY_HANDLE propertyHandle)
     if (propertyHandle == NULL)
     {
         result = NULL;
-        LogError("(Error code: %s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code: %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -2147,7 +2185,7 @@ const char* Schema_GetPropertyType(SCHEMA_PROPERTY_HANDLE propertyHandle)
     if (propertyHandle == NULL)
     {
         result = NULL;
-        LogError("(Error code: %s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code: %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -2168,7 +2206,7 @@ SCHEMA_RESULT Schema_GetModelCount(SCHEMA_HANDLE schemaHandle, size_t* modelCoun
         (modelCount == NULL) )
     {
         result = SCHEMA_INVALID_ARG;
-        LogError("(result = %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
     }
     else
     {
@@ -2191,7 +2229,7 @@ SCHEMA_MODEL_TYPE_HANDLE Schema_GetModelByName(SCHEMA_HANDLE schemaHandle, const
         (modelName == NULL))
     {
         result = NULL;
-        LogError("(Error code: %s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code: %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -2230,12 +2268,12 @@ SCHEMA_MODEL_TYPE_HANDLE Schema_GetModelByIndex(SCHEMA_HANDLE schemaHandle, size
         (index >= schema->ModelTypeCount))
     {
         result = NULL;
-        LogError("(Error code: %s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code: %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
 
-        /* Codes_SRS_SCHEMA_99_126: [Schema_GetModelByIndex shall return a non-NULL SCHEMA_MODEL_TYPE_HANDLE corresponding to the model identified by schemaHandle and matching the index number provided by the index argument.] */ 
+        /* Codes_SRS_SCHEMA_99_126: [Schema_GetModelByIndex shall return a non-NULL SCHEMA_MODEL_TYPE_HANDLE corresponding to the model identified by schemaHandle and matching the index number provided by the index argument.] */
         /* Codes_SRS_SCHEMA_99_127: [The index argument is zero based, and the order in which models were added shall be the index in which they will be retrieved.] */
         result = schema->ModelTypes[index];
     }
@@ -2270,7 +2308,7 @@ SCHEMA_RESULT Schema_AddModelModel(SCHEMA_MODEL_TYPE_HANDLE modelTypeHandle, con
         )
     {
         result = SCHEMA_INVALID_ARG;
-        LogError("(Error code: %s)", ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
+        LogError("(Error code: %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, SCHEMA_INVALID_ARG));
     }
     else
     {
@@ -2282,19 +2320,19 @@ SCHEMA_RESULT Schema_AddModelModel(SCHEMA_MODEL_TYPE_HANDLE modelTypeHandle, con
         if (mallocAndStrcpy_s((char**)&(temp.propertyName), propertyName) != 0)
         {
             result = SCHEMA_ERROR;
-            LogError("(Error code: %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+            LogError("(Error code: %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
         }
         else if (VECTOR_push_back(parentModel->models, &temp, 1) != 0)
         {
             /*Codes_SRS_SCHEMA_99_174: [The function shall return SCHEMA_ERROR if any other error occurs.]*/
             free((void*)temp.propertyName);
             result = SCHEMA_ERROR;
-            LogError("(Error code: %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+            LogError("(Error code: %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
         }
         else
         {
             /*Codes_SRS_SCHEMA_99_164: [If the function succeeds, then the return value shall be SCHEMA_OK.]*/
-            
+
             result = SCHEMA_OK;
         }
     }
@@ -2312,7 +2350,7 @@ SCHEMA_RESULT Schema_GetModelModelCount(SCHEMA_MODEL_TYPE_HANDLE modelTypeHandle
         )
     {
         result = SCHEMA_INVALID_ARG;
-        LogError("(Error code: %s)", ENUM_TO_STRING(SCHEMA_RESULT, result));
+        LogError("(Error code: %s)", MU_ENUM_TO_STRING(SCHEMA_RESULT, result));
     }
     else
     {
@@ -2444,7 +2482,7 @@ size_t Schema_GetModelModelByIndex_Offset(SCHEMA_MODEL_TYPE_HANDLE modelTypeHand
         void* temp = VECTOR_element(model->models, index);
         if (temp == 0)
         {
-            LogError("specified index [out of bounds] (%zu)", index);
+            LogError("specified index [out of bounds] (%lu)", (unsigned long)index);
             result = 0;
         }
         else
@@ -2459,7 +2497,7 @@ size_t Schema_GetModelModelByIndex_Offset(SCHEMA_MODEL_TYPE_HANDLE modelTypeHand
 SCHEMA_MODEL_TYPE_HANDLE Schema_GetModelModelyByIndex(SCHEMA_MODEL_TYPE_HANDLE modelTypeHandle, size_t index)
 {
     SCHEMA_MODEL_TYPE_HANDLE result;
-    if (modelTypeHandle == NULL) 
+    if (modelTypeHandle == NULL)
     {
         /*Codes_SRS_SCHEMA_99_173: [Schema_GetModelModelyByIndex shall return NULL in the cases when it cannot provide the handle.]*/
         result = NULL;
@@ -2712,8 +2750,8 @@ SCHEMA_RESULT Schema_AddModelDesiredProperty(SCHEMA_MODEL_TYPE_HANDLE modelTypeH
         (desiredPropertyDeinitialize== NULL)
         )
     {
-        LogError("invalid arg SCHEMA_MODEL_TYPE_HANDLE modelTypeHandle=%p, const char* desiredPropertyName=%p, const char* desiredPropertyType=%p, pfDesiredPropertyFromAGENT_DATA_TYPE desiredPropertyFromAGENT_DATA_TYPE=%p, pfDesiredPropertyInitialize desiredPropertyInitialize=%p, pfDesiredPropertyDeinitialize desiredPropertyDeinitialize=%p, size_t offset=%zu",
-            modelTypeHandle, desiredPropertyName, desiredPropertyType, desiredPropertyFromAGENT_DATA_TYPE, desiredPropertyInitialize, desiredPropertyDeinitialize, offset);
+        LogError("invalid arg SCHEMA_MODEL_TYPE_HANDLE modelTypeHandle=%p, const char* desiredPropertyName=%p, const char* desiredPropertyType=%p, pfDesiredPropertyFromAGENT_DATA_TYPE desiredPropertyFromAGENT_DATA_TYPE=%p, pfDesiredPropertyInitialize desiredPropertyInitialize=%p, pfDesiredPropertyDeinitialize desiredPropertyDeinitialize=%p, size_t offset=%lu",
+            modelTypeHandle, desiredPropertyName, desiredPropertyType, desiredPropertyFromAGENT_DATA_TYPE, desiredPropertyInitialize, desiredPropertyDeinitialize, (unsigned long)offset);
         result = SCHEMA_INVALID_ARG;
     }
     else
@@ -2845,7 +2883,7 @@ SCHEMA_DESIRED_PROPERTY_HANDLE Schema_GetModelDesiredPropertyByIndex(SCHEMA_MODE
     /*Codes_SRS_SCHEMA_02_038: [ If modelTypeHandle is NULL then Schema_GetModelDesiredPropertyByIndex shall fail and return NULL. ]*/
     if (modelTypeHandle == NULL)
     {
-        LogError("invalid argument SCHEMA_MODEL_TYPE_HANDLE modelTypeHandle=%p, size_t index=%p", modelTypeHandle, index);
+        LogError("invalid argument SCHEMA_MODEL_TYPE_HANDLE modelTypeHandle=%p, size_t index=%lu", modelTypeHandle, (unsigned long)index);
         result = NULL;
     }
     else

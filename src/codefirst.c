@@ -6,18 +6,18 @@
 #include "azure_c_shared_utility/gballoc.h"
 
 #include "codefirst.h"
-#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include <stddef.h>
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "iotdevice.h"
 
-DEFINE_ENUM_STRINGS(CODEFIRST_RESULT, CODEFIRST_RESULT_VALUES)
-DEFINE_ENUM_STRINGS(EXECUTE_COMMAND_RESULT, EXECUTE_COMMAND_RESULT_VALUES)
+MU_DEFINE_ENUM_STRINGS_WITHOUT_INVALID(CODEFIRST_RESULT, CODEFIRST_RESULT_VALUES)
+MU_DEFINE_ENUM_STRINGS_WITHOUT_INVALID(EXECUTE_COMMAND_RESULT, EXECUTE_COMMAND_RESULT_VALUES)
 
 #define LOG_CODEFIRST_ERROR \
-    LogError("(result = %s)", ENUM_TO_STRING(CODEFIRST_RESULT, result))
+    LogError("(result = %s)", MU_ENUM_TO_STRING(CODEFIRST_RESULT, result))
 
 typedef struct DEVICE_HEADER_DATA_TAG
 {
@@ -39,9 +39,9 @@ typedef struct DEVICE_HEADER_DATA_TAG
     or call directly an API (that will set automatically g_OverrideSchemaNamespace to NULL).
 
     To switch to NOT INIT state, depending on the method used to initialize:
-        - if CodeFirst_Init was called, then only by a call to CodeFirst_Deinit the switch will take place 
+        - if CodeFirst_Init was called, then only by a call to CodeFirst_Deinit the switch will take place
             (note how in this case g_OverrideSchemaNamespace survives destruction of all devices).
-        - if the init has been done "lazily" by an API call then the module returns to uninitialized state 
+        - if the init has been done "lazily" by an API call then the module returns to uninitialized state
             when the number of devices reaches zero.
 
                               +-----------------------------+
@@ -73,9 +73,9 @@ typedef struct DEVICE_HEADER_DATA_TAG
 #define CODEFIRST_STATE_VALUES \
     CODEFIRST_STATE_NOT_INIT, \
     CODEFIRST_STATE_INIT_BY_INIT, \
-    CODEFIRST_STATE_INIT_BY_API  
+    CODEFIRST_STATE_INIT_BY_API
 
-DEFINE_ENUM(CODEFIRST_STATE, CODEFIRST_STATE_VALUES)
+MU_DEFINE_ENUM(CODEFIRST_STATE, CODEFIRST_STATE_VALUES)
 
 static CODEFIRST_STATE g_state = CODEFIRST_STATE_NOT_INIT;
 static const char* g_OverrideSchemaNamespace;
@@ -157,7 +157,7 @@ static void DestroyDevice(DEVICE_HEADER_DATA* deviceHeader)
 {
     /* Codes_SRS_CODEFIRST_99_085:[CodeFirst_DestroyDevice shall free all resources associated with a device.] */
     /* Codes_SRS_CODEFIRST_99_087:[In order to release the device handle, CodeFirst_DestroyDevice shall call Device_Destroy.] */
-    
+
     Device_Destroy(deviceHeader->DeviceHandle);
     free(deviceHeader->data);
     free(deviceHeader);
@@ -179,7 +179,7 @@ static CODEFIRST_RESULT buildStructTypes(SCHEMA_HANDLE schemaHandle, const REFLE
             {
                 /*Codes_SRS_CODEFIRST_99_076:[If any Schema APIs fail, CODEFIRST_SCHEMA_ERROR shall be returned.]*/
                 result = CODEFIRST_SCHEMA_ERROR;
-                LogError("create struct failed %s", ENUM_TO_STRING(CODEFIRST_RESULT, result));
+                LogError("create struct failed %s", MU_ENUM_TO_STRING(CODEFIRST_RESULT, result));
                 break;
             }
             else
@@ -196,7 +196,7 @@ static CODEFIRST_RESULT buildStructTypes(SCHEMA_HANDLE schemaHandle, const REFLE
                             {
                                 /*Codes_SRS_CODEFIRST_99_076:[If any Schema APIs fail, CODEFIRST_SCHEMA_ERROR shall be returned.]*/
                                 result = CODEFIRST_SCHEMA_ERROR;
-                                LogError("add struct property failed %s", ENUM_TO_STRING(CODEFIRST_RESULT, result));
+                                LogError("add struct property failed %s", MU_ENUM_TO_STRING(CODEFIRST_RESULT, result));
                                 break;
                             }
                         }
@@ -220,7 +220,7 @@ static CODEFIRST_RESULT buildModel(SCHEMA_HANDLE schemaHandle, const REFLECTED_D
     {
         /*Codes_SRS_CODEFIRST_99_076:[If any Schema APIs fail, CODEFIRST_SCHEMA_ERROR shall be returned.]*/
         result = CODEFIRST_SCHEMA_ERROR;
-        LogError("cannot get model %s %s", modelReflectedData->what.model.name, ENUM_TO_STRING(CODEFIRST_RESULT, result));
+        LogError("cannot get model %s %s", modelReflectedData->what.model.name, MU_ENUM_TO_STRING(CODEFIRST_RESULT, result));
         goto out;
     }
 
@@ -239,7 +239,7 @@ static CODEFIRST_RESULT buildModel(SCHEMA_HANDLE schemaHandle, const REFLECTED_D
                 {
                     /*Codes_SRS_CODEFIRST_99_076:[If any Schema APIs fail, CODEFIRST_SCHEMA_ERROR shall be returned.]*/
                     result = CODEFIRST_SCHEMA_ERROR;
-                    LogError("add model failed %s", ENUM_TO_STRING(CODEFIRST_RESULT, result));
+                    LogError("add model failed %s", MU_ENUM_TO_STRING(CODEFIRST_RESULT, result));
                     goto out;
                 }
             }
@@ -249,7 +249,7 @@ static CODEFIRST_RESULT buildModel(SCHEMA_HANDLE schemaHandle, const REFLECTED_D
                 {
                     /*Codes_SRS_CODEFIRST_99_076:[If any Schema APIs fail, CODEFIRST_SCHEMA_ERROR shall be returned.]*/
                     result = CODEFIRST_SCHEMA_ERROR;
-                    LogError("add property failed %s", ENUM_TO_STRING(CODEFIRST_RESULT, result));
+                    LogError("add property failed %s", MU_ENUM_TO_STRING(CODEFIRST_RESULT, result));
                     goto out;
                 }
             }
@@ -267,7 +267,7 @@ static CODEFIRST_RESULT buildModel(SCHEMA_HANDLE schemaHandle, const REFLECTED_D
                 {
                     /*Codes_SRS_CODEFIRST_99_076:[If any Schema APIs fail, CODEFIRST_SCHEMA_ERROR shall be returned.]*/
                     result = CODEFIRST_SCHEMA_ERROR;
-                    LogError("add model failed %s", ENUM_TO_STRING(CODEFIRST_RESULT, result));
+                    LogError("add model failed %s", MU_ENUM_TO_STRING(CODEFIRST_RESULT, result));
                     goto out;
                 }
             }
@@ -277,7 +277,7 @@ static CODEFIRST_RESULT buildModel(SCHEMA_HANDLE schemaHandle, const REFLECTED_D
                 {
                     /*Codes_SRS_CODEFIRST_99_076:[If any Schema APIs fail, CODEFIRST_SCHEMA_ERROR shall be returned.]*/
                     result = CODEFIRST_SCHEMA_ERROR;
-                    LogError("add reported property failed %s", ENUM_TO_STRING(CODEFIRST_RESULT, result));
+                    LogError("add reported property failed %s", MU_ENUM_TO_STRING(CODEFIRST_RESULT, result));
                     goto out;
                 }
             }
@@ -295,24 +295,24 @@ static CODEFIRST_RESULT buildModel(SCHEMA_HANDLE schemaHandle, const REFLECTED_D
                 {
                     /*Codes_SRS_CODEFIRST_99_076:[If any Schema APIs fail, CODEFIRST_SCHEMA_ERROR shall be returned.]*/
                     result = CODEFIRST_SCHEMA_ERROR;
-                    LogError("add model failed %s", ENUM_TO_STRING(CODEFIRST_RESULT, result));
+                    LogError("add model failed %s", MU_ENUM_TO_STRING(CODEFIRST_RESULT, result));
                     goto out;
                 }
             }
             else
             {
-                if (Schema_AddModelDesiredProperty(modelTypeHandle, 
-                    something->what.desiredProperty.name, 
-                    something->what.desiredProperty.type, 
-                    something->what.desiredProperty.FromAGENT_DATA_TYPE, 
-                    something->what.desiredProperty.desiredPropertInitialize, 
-                    something->what.desiredProperty.desiredPropertDeinitialize, 
-                    something->what.desiredProperty.offset, 
+                if (Schema_AddModelDesiredProperty(modelTypeHandle,
+                    something->what.desiredProperty.name,
+                    something->what.desiredProperty.type,
+                    something->what.desiredProperty.FromAGENT_DATA_TYPE,
+                    something->what.desiredProperty.desiredPropertInitialize,
+                    something->what.desiredProperty.desiredPropertDeinitialize,
+                    something->what.desiredProperty.offset,
                     something->what.desiredProperty.onDesiredProperty) != SCHEMA_OK)
                 {
                     /*Codes_SRS_CODEFIRST_99_076:[If any Schema APIs fail, CODEFIRST_SCHEMA_ERROR shall be returned.]*/
                     result = CODEFIRST_SCHEMA_ERROR;
-                    LogError("add desired property failed %s", ENUM_TO_STRING(CODEFIRST_RESULT, result));
+                    LogError("add desired property failed %s", MU_ENUM_TO_STRING(CODEFIRST_RESULT, result));
                     goto out;
                 }
             }
@@ -328,7 +328,7 @@ static CODEFIRST_RESULT buildModel(SCHEMA_HANDLE schemaHandle, const REFLECTED_D
             {
                 /*Codes_SRS_CODEFIRST_99_076:[If any Schema APIs fail, CODEFIRST_SCHEMA_ERROR shall be returned.]*/
                 result = CODEFIRST_SCHEMA_ERROR;
-                LogError("add model action failed %s", ENUM_TO_STRING(CODEFIRST_RESULT, result));
+                LogError("add model action failed %s", MU_ENUM_TO_STRING(CODEFIRST_RESULT, result));
                 goto out;
             }
 
@@ -338,7 +338,7 @@ static CODEFIRST_RESULT buildModel(SCHEMA_HANDLE schemaHandle, const REFLECTED_D
                 {
                     /*Codes_SRS_CODEFIRST_99_076:[If any Schema APIs fail, CODEFIRST_SCHEMA_ERROR shall be returned.]*/
                     result = CODEFIRST_SCHEMA_ERROR;
-                    LogError("add model action argument failed %s", ENUM_TO_STRING(CODEFIRST_RESULT, result));
+                    LogError("add model action argument failed %s", MU_ENUM_TO_STRING(CODEFIRST_RESULT, result));
                     goto out;
                 }
             }
@@ -354,7 +354,7 @@ static CODEFIRST_RESULT buildModel(SCHEMA_HANDLE schemaHandle, const REFLECTED_D
             {
                 /*Codes_SRS_CODEFIRST_99_076: [ If any Schema APIs fail, CodeFirst_RegisterSchema shall return NULL. ]*/
                 result = CODEFIRST_SCHEMA_ERROR;
-                LogError("add model method failed %s", ENUM_TO_STRING(CODEFIRST_RESULT, result));
+                LogError("add model method failed %s", MU_ENUM_TO_STRING(CODEFIRST_RESULT, result));
                 goto out;
             }
 
@@ -364,7 +364,7 @@ static CODEFIRST_RESULT buildModel(SCHEMA_HANDLE schemaHandle, const REFLECTED_D
                 {
                     /*Codes_SRS_CODEFIRST_99_076: [ If any Schema APIs fail, CodeFirst_RegisterSchema shall return NULL. ]*/
                     result = CODEFIRST_SCHEMA_ERROR;
-                    LogError("add model method argument failed %s", ENUM_TO_STRING(CODEFIRST_RESULT, result));
+                    LogError("add model method argument failed %s", MU_ENUM_TO_STRING(CODEFIRST_RESULT, result));
                     goto out;
                 }
             }
@@ -389,7 +389,7 @@ static CODEFIRST_RESULT buildModelTypes(SCHEMA_HANDLE schemaHandle, const REFLEC
             {
                 /*Codes_SRS_CODEFIRST_99_076:[If any Schema APIs fail, CODEFIRST_SCHEMA_ERROR shall be returned.]*/
                 result = CODEFIRST_SCHEMA_ERROR;
-                LogError("create model failed %s", ENUM_TO_STRING(CODEFIRST_RESULT, result));
+                LogError("create model failed %s", MU_ENUM_TO_STRING(CODEFIRST_RESULT, result));
                 goto out;
             }
         }
@@ -422,7 +422,7 @@ static CODEFIRST_RESULT CodeFirst_Init_impl(const char* overrideSchemaNamespace,
         result = CODEFIRST_ALREADY_INIT;
         if(calledFromCodeFirst_Init) /*do not log this error when APIs attempt lazy init*/
         {
-             LogError("CodeFirst was already init %s", ENUM_TO_STRING(CODEFIRST_RESULT, result));
+             LogError("CodeFirst was already init %s", MU_ENUM_TO_STRING(CODEFIRST_RESULT, result));
         }
     }
     else
@@ -544,7 +544,7 @@ EXECUTE_COMMAND_RESULT CodeFirst_InvokeAction(DEVICE_HANDLE deviceHandle, void* 
     if (g_state == CODEFIRST_STATE_NOT_INIT)
     {
         result = EXECUTE_COMMAND_ERROR;
-        LogError("CodeFirst_InvokeAction called before init has an error %s ", ENUM_TO_STRING(EXECUTE_COMMAND_RESULT, result));
+        LogError("CodeFirst_InvokeAction called before init has an error %s ", MU_ENUM_TO_STRING(EXECUTE_COMMAND_RESULT, result));
     }
     /*Codes_SRS_CODEFIRST_99_066:[ If actionName, relativeActionPath or deviceHandle is NULL then EXECUTE_COMMAND_ERROR shall be returned*/
     else if ((actionName == NULL) ||
@@ -552,13 +552,13 @@ EXECUTE_COMMAND_RESULT CodeFirst_InvokeAction(DEVICE_HANDLE deviceHandle, void* 
         (relativeActionPath == NULL))
     {
         result = EXECUTE_COMMAND_ERROR;
-        LogError("action Name is NULL %s ", ENUM_TO_STRING(EXECUTE_COMMAND_RESULT, result));
+        LogError("action Name is NULL %s ", MU_ENUM_TO_STRING(EXECUTE_COMMAND_RESULT, result));
     }
     /*Codes_SRS_CODEFIRST_99_067:[ If parameterCount is greater than zero and parameterValues is NULL then EXECUTE_COMMAND_ERROR shall be returned.]*/
     else if ((parameterCount > 0) && (parameterValues == NULL))
     {
         result = EXECUTE_COMMAND_ERROR;
-        LogError("parameterValues error %s ", ENUM_TO_STRING(EXECUTE_COMMAND_RESULT, result));
+        LogError("parameterValues error %s ", MU_ENUM_TO_STRING(EXECUTE_COMMAND_RESULT, result));
     }
     else
     {
@@ -575,7 +575,7 @@ EXECUTE_COMMAND_RESULT CodeFirst_InvokeAction(DEVICE_HANDLE deviceHandle, void* 
         {
             /*Codes_SRS_CODEFIRST_99_141:[If a child model specified in the relativeActionPath argument cannot be found by CodeFirst_InvokeAction, it shall return EXECUTE_COMMAND_ERROR.] */
             result = EXECUTE_COMMAND_ERROR;
-            LogError("action %s was not found %s ", actionName, ENUM_TO_STRING(EXECUTE_COMMAND_RESULT, result));
+            LogError("action %s was not found %s ", actionName, MU_ENUM_TO_STRING(EXECUTE_COMMAND_RESULT, result));
         }
         else
         {
@@ -602,7 +602,7 @@ EXECUTE_COMMAND_RESULT CodeFirst_InvokeAction(DEVICE_HANDLE deviceHandle, void* 
 
     if (result == EXECUTE_COMMAND_ERROR)
     {
-        LogError(" %s ", ENUM_TO_STRING(EXECUTE_COMMAND_RESULT, result));
+        LogError(" %s ", MU_ENUM_TO_STRING(EXECUTE_COMMAND_RESULT, result));
     }
     return result;
 }
@@ -622,8 +622,8 @@ METHODRETURN_HANDLE CodeFirst_InvokeMethod(DEVICE_HANDLE deviceHandle, void* cal
         (relativeMethodPath == NULL))
     {
         result = NULL;
-        LogError("invalid args: DEVICE_HANDLE deviceHandle=%p, void* callbackUserContext=%p, const char* relativeMethodPath=%p, const char* methodName=%p, size_t parameterCount=%zu, const AGENT_DATA_TYPE* parameterValues=%p",
-            deviceHandle, callbackUserContext, relativeMethodPath, methodName, parameterCount, parameterValues);
+        LogError("invalid args: DEVICE_HANDLE deviceHandle=%p, void* callbackUserContext=%p, const char* relativeMethodPath=%p, const char* methodName=%p, size_t parameterCount=%lu, const AGENT_DATA_TYPE* parameterValues=%p",
+            deviceHandle, callbackUserContext, relativeMethodPath, methodName, (unsigned long)parameterCount, parameterValues);
     }
     else if ((parameterCount > 0) && (parameterValues == NULL))
     {
@@ -706,7 +706,7 @@ SCHEMA_HANDLE CodeFirst_RegisterSchema(const char* schemaNamespace, const REFLEC
             {
                 /* Codes_SRS_CODEFIRST_99_076:[If any Schema APIs fail, CodeFirst_RegisterSchema shall return NULL.] */
                 result = NULL;
-                LogError("schema init failed %s", ENUM_TO_STRING(CODEFIRST_RESULT, CODEFIRST_SCHEMA_ERROR));
+                LogError("schema init failed %s", MU_ENUM_TO_STRING(CODEFIRST_RESULT, CODEFIRST_SCHEMA_ERROR));
             }
             else
             {
@@ -738,7 +738,7 @@ AGENT_DATA_TYPE_TYPE CodeFirst_GetPrimitiveType(const char* typeName)
     {
         return EDM_SINGLE_TYPE;
     }
-    else 
+    else
 #endif
     if (strcmp(typeName, "int") == 0)
     {
@@ -886,18 +886,18 @@ void* CodeFirst_CreateDevice(SCHEMA_MODEL_TYPE_HANDLE model, const REFLECTED_DAT
     if (model == NULL)
     {
         result = NULL;
-        LogError(" %s ", ENUM_TO_STRING(CODEFIRST_RESULT, CODEFIRST_INVALID_ARG));
+        LogError(" %s ", MU_ENUM_TO_STRING(CODEFIRST_RESULT, CODEFIRST_INVALID_ARG));
     }
     else
     {
         /*Codes_SRS_CODEFIRST_02_037: [ CodeFirst_CreateDevice shall call CodeFirst_Init, passing NULL for overrideSchemaNamespace. ]*/
         (void)CodeFirst_Init_impl(NULL, false); /*lazy init*/
-        
+
         if ((deviceHeader = (DEVICE_HEADER_DATA*)malloc(sizeof(DEVICE_HEADER_DATA))) == NULL)
         {
             /* Codes_SRS_CODEFIRST_99_102:[On any other errors, Device_Create shall return NULL.] */
             result = NULL;
-            LogError(" %s ", ENUM_TO_STRING(CODEFIRST_RESULT, CODEFIRST_ERROR));
+            LogError(" %s ", MU_ENUM_TO_STRING(CODEFIRST_RESULT, CODEFIRST_ERROR));
         }
         /* Codes_SRS_CODEFIRST_99_081:[CodeFirst_CreateDevice shall use Device_Create to create a device handle.] */
         /* Codes_SRS_CODEFIRST_99_082: [ CodeFirst_CreateDevice shall pass to Device_Create the function CodeFirst_InvokeAction, action callback argument and the CodeFirst_InvokeMethod ] */
@@ -908,7 +908,7 @@ void* CodeFirst_CreateDevice(SCHEMA_MODEL_TYPE_HANDLE model, const REFLECTED_DAT
                 free(deviceHeader);
                 deviceHeader = NULL;
                 result = NULL;
-                LogError(" %s ", ENUM_TO_STRING(CODEFIRST_RESULT, CODEFIRST_ERROR));
+                LogError(" %s ", MU_ENUM_TO_STRING(CODEFIRST_RESULT, CODEFIRST_ERROR));
             }
             else
             {
@@ -916,7 +916,7 @@ void* CodeFirst_CreateDevice(SCHEMA_MODEL_TYPE_HANDLE model, const REFLECTED_DAT
 
                 initializeDesiredProperties(model, deviceHeader->data);
 
-                if (Device_Create(model, CodeFirst_InvokeAction, deviceHeader, CodeFirst_InvokeMethod, deviceHeader, 
+                if (Device_Create(model, CodeFirst_InvokeAction, deviceHeader, CodeFirst_InvokeMethod, deviceHeader,
                     includePropertyPath, &deviceHeader->DeviceHandle) != DEVICE_OK)
                 {
                     free(deviceHeader->data);
@@ -924,7 +924,7 @@ void* CodeFirst_CreateDevice(SCHEMA_MODEL_TYPE_HANDLE model, const REFLECTED_DAT
 
                     /* Codes_SRS_CODEFIRST_99_084:[If Device_Create fails, CodeFirst_CreateDevice shall return NULL.] */
                     result = NULL;
-                    LogError(" %s ", ENUM_TO_STRING(CODEFIRST_RESULT, CODEFIRST_DEVICE_FAILED));
+                    LogError(" %s ", MU_ENUM_TO_STRING(CODEFIRST_RESULT, CODEFIRST_DEVICE_FAILED));
                 }
                 else if ((newDevices = (DEVICE_HEADER_DATA**)realloc(g_Devices, sizeof(DEVICE_HEADER_DATA*) * (g_DeviceCount + 1))) == NULL)
                 {
@@ -934,7 +934,7 @@ void* CodeFirst_CreateDevice(SCHEMA_MODEL_TYPE_HANDLE model, const REFLECTED_DAT
 
                     /* Codes_SRS_CODEFIRST_99_102:[On any other errors, Device_Create shall return NULL.] */
                     result = NULL;
-                    LogError(" %s ", ENUM_TO_STRING(CODEFIRST_RESULT, CODEFIRST_ERROR));
+                    LogError(" %s ", MU_ENUM_TO_STRING(CODEFIRST_RESULT, CODEFIRST_ERROR));
                 }
                 else
                 {
@@ -946,6 +946,7 @@ void* CodeFirst_CreateDevice(SCHEMA_MODEL_TYPE_HANDLE model, const REFLECTED_DAT
                     if (schemaResult != SCHEMA_OK)
                     {
                         Device_Destroy(deviceHeader->DeviceHandle);
+                        free(newDevices);
                         free(deviceHeader->data);
                         free(deviceHeader);
 
@@ -964,7 +965,7 @@ void* CodeFirst_CreateDevice(SCHEMA_MODEL_TYPE_HANDLE model, const REFLECTED_DAT
                 }
             }
         }
-        
+
     }
 
     return result;
@@ -1194,8 +1195,8 @@ CODEFIRST_RESULT CodeFirst_SendAsync(unsigned char** destination, size_t* destin
     va_list ap;
 
     if (
-        (numProperties == 0) || 
-        (destination == NULL) || 
+        (numProperties == 0) ||
+        (destination == NULL) ||
         (destinationSize == NULL)
         )
     {
@@ -1208,7 +1209,7 @@ CODEFIRST_RESULT CodeFirst_SendAsync(unsigned char** destination, size_t* destin
     {
         /*Codes_SRS_CODEFIRST_02_040: [ CodeFirst_SendAsync shall call CodeFirst_Init, passing NULL for overrideSchemaNamespace. ]*/
         (void)CodeFirst_Init_impl(NULL, false); /*lazy init*/
-        
+
         DEVICE_HEADER_DATA* deviceHeader = NULL;
         size_t i;
         TRANSACTION_HANDLE transaction = NULL;
@@ -1356,7 +1357,7 @@ CODEFIRST_RESULT CodeFirst_SendAsync(unsigned char** destination, size_t* destin
         }
 
         va_end(ap);
-        
+
     }
 
     return result;
@@ -1368,14 +1369,14 @@ CODEFIRST_RESULT CodeFirst_SendAsyncReported(unsigned char** destination, size_t
     if ((destination == NULL) || (destinationSize == NULL) || numReportedProperties == 0)
     {
         /*Codes_SRS_CODEFIRST_02_018: [ If parameter destination, destinationSize or any of the values passed through va_args is NULL then CodeFirst_SendAsyncReported shall fail and return CODEFIRST_INVALID_ARG. ]*/
-        LogError("invalid argument unsigned char** destination=%p, size_t* destinationSize=%p, size_t numReportedProperties=%zu", destination, destinationSize, numReportedProperties);
+        LogError("invalid argument unsigned char** destination=%p, size_t* destinationSize=%p, size_t numReportedProperties=%lu", destination, destinationSize, (unsigned long)numReportedProperties);
         result = CODEFIRST_INVALID_ARG;
     }
     else
     {
         /*Codes_SRS_CODEFIRST_02_046: [ CodeFirst_SendAsyncReported shall call CodeFirst_Init, passing NULL for overrideSchemaNamespace. ]*/
         (void)CodeFirst_Init_impl(NULL, false);/*lazy init*/
-   
+
         DEVICE_HEADER_DATA* deviceHeader = NULL;
         size_t i;
         REPORTED_PROPERTIES_TRANSACTION_HANDLE transaction = NULL;
@@ -1390,7 +1391,7 @@ CODEFIRST_RESULT CodeFirst_SendAsyncReported(unsigned char** destination, size_t
             /*Codes_SRS_CODEFIRST_02_018: [ If parameter destination, destinationSize or any of the values passed through va_args is NULL then CodeFirst_SendAsyncReported shall fail and return CODEFIRST_INVALID_ARG. ]*/
             if (value == NULL)
             {
-                LogError("argument number %zu passed through variable arguments is NULL", i);
+                LogError("argument number %lu passed through variable arguments is NULL", (unsigned long)i);
                 result = CODEFIRST_INVALID_ARG;
                 break;
             }
