@@ -4,12 +4,13 @@
 language: generic
 env:
   global:
-    - IDE_VERSION=1.6.12
+    - IDE_VERSION=1.8.10
   matrix:
     - BOARD="arduino:samd:arduino_zero_edbg"
     - BOARD="arduino:samd:mkr1000"
     - BOARD="esp8266:esp8266:huzzah:FlashSize=4M3M,CpuFrequency=80"
     - BOARD="esp8266:esp8266:thing"
+    - BOARD="esp32:esp32:huzzah"
 before_install:
   - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
   - sleep 3
@@ -31,15 +32,21 @@ before_install:
       arduino --install-library NTPClient;
       arduino --install-library NTPClient;
     fi
-  - findAndReplace() { sed -i'' -e"s|$1|$2|g" "$3"; }
-  - buildExampleSketch() {
-      EXAMPLE_SKETCH=$PWD/examples/$1/$1.ino;
+    - if [[ "$BOARD" =~ "esp32:esp32:" ]]; then
+      arduino --pref "boardsmanager.additional.urls=https://dl.espressif.com/dl/package_esp32_index.json" --install-boards esp32:esp32;
+      arduino --pref "boardsmanager.additional.urls=" --save-prefs;
+      arduino --install-library NTPClient;
+    fi
 
-      if [[ "$BOARD" =~ "esp8266:esp8266:" ]]; then
-        findAndReplace WiFi101 ESP8266WiFi $EXAMPLE_SKETCH;
-        findAndReplace WiFiSSLClient WiFiClientSecure $EXAMPLE_SKETCH;
-        findAndReplace WiFiUdp WiFiUdp $EXAMPLE_SKETCH; 
-      fi
+- findAndReplace() { sed -i'' -e"s|$1|$2|g" "$3"; }
+  - buildExampleSketch() {
+      EXAMPLE_SKETCH=$PWD/examples/iothub_ll_telemetry_sample/telemetry_sample.c.ino;
+
+#       if [[ "$BOARD" =~ "esp8266:esp8266:" ]]; then
+#         findAndReplace WiFi101 ESP8266WiFi $EXAMPLE_SKETCH;
+#         findAndReplace WiFiSSLClient WiFiClientSecure $EXAMPLE_SKETCH;
+#         findAndReplace WiFiUdp WiFiUdp $EXAMPLE_SKETCH; 
+#       fi
 
       cat $EXAMPLE_SKETCH;
 
@@ -47,7 +54,9 @@ before_install:
     }
 install:
   - arduino --install-library "AzureIoTUtility"
+  - arduino --install-library "AzureIoTSocket_WiFi"
+  - arduino --install-library "AzureIoTProtocol_MQTT"
   - arduino --install-library "AzureIoTProtocol_HTTP"
   - ln -s $PWD $HOME/Arduino/libraries/.
 script:
-  - buildExampleSketch simplesample_http
+  - buildExampleSketch telemetry_sample.c
