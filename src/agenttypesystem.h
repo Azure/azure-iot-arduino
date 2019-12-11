@@ -18,7 +18,7 @@
 #endif
 
 #include "azure_c_shared_utility/agenttime.h"
-#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/strings.h"
 
 /*Codes_SRS_AGENT_TYPE_SYSTEM_99_001:[ AGENT_TYPE_SYSTEM shall have the following interface]*/
@@ -49,9 +49,9 @@ typedef struct EDM_BINARY_TAG
 
 #define EDM_BOOLEANS_VALUES \
     EDM_TRUE, \
-    EDM_FALSE 
+    EDM_FALSE
 
-DEFINE_ENUM(EDM_BOOLEANS, EDM_BOOLEANS_VALUES);
+MU_DEFINE_ENUM_WITHOUT_INVALID(EDM_BOOLEANS, EDM_BOOLEANS_VALUES);
 
 /*ispositiveinfinity*/
 
@@ -59,14 +59,14 @@ DEFINE_ENUM(EDM_BOOLEANS, EDM_BOOLEANS_VALUES);
 #define ISPOSITIVEINFINITY(x) ((_finite((x))==0) && ((_fpclass((x)) & _FPCLASS_PINF) == _FPCLASS_PINF))
 #else
 #if defined __STDC_VERSION__
-#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201112L))
-/*C99 compiler or C11*/
+#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201112L) || (__STDC_VERSION__ == 201710L))
+/*C99, C11 or C18 compiler*/
 #define ISPOSITIVEINFINITY(x) (isinf((x)) && (signbit((x))==0))
 #else
 #error update this file to contain the latest C standard.
 #endif
 #else
-#ifdef __cplusplus 
+#ifdef __cplusplus
 #define ISPOSITIVEINFINITY(x) (std::isinf((x)) && (signbit((x))==0))
 #else
 #error unknown (or C89) compiler, must provide a definition for ISPOSITIVEINFINITY
@@ -79,14 +79,14 @@ DEFINE_ENUM(EDM_BOOLEANS, EDM_BOOLEANS_VALUES);
 #define ISNEGATIVEINFINITY(x) ((_finite((x))==0) && ((_fpclass((x)) & _FPCLASS_NINF) == _FPCLASS_NINF))
 #else
 #if defined __STDC_VERSION__
-#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201112L))
-/*C99 compiler or C11*/
+#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201112L) || (__STDC_VERSION__ == 201710L))
+/*C99, C11 or C18 compiler*/
 #define ISNEGATIVEINFINITY(x) (isinf((x)) && (signbit((x))!=0))
 #else
 #error update this file to contain the latest C standard.
 #endif
 #else
-#ifdef __cplusplus 
+#ifdef __cplusplus
 #define ISNEGATIVEINFINITY(x) (std::isinf((x)) && (signbit((x)) != 0))
 #else
 #error unknown (or C89) compiler, must provide a definition for ISNEGATIVEINFINITY
@@ -554,7 +554,7 @@ typedef struct EDM_COMPLEX_TYPE_TAG
     AGENT_DATA_TYPES_NOT_IMPLEMENTED, \
     AGENT_DATA_TYPES_JSON_ENCODER_ERRROR
 
-DEFINE_ENUM(AGENT_DATA_TYPES_RESULT, AGENT_DATA_TYPES_RESULT_VALUES);
+MU_DEFINE_ENUM_WITHOUT_INVALID(AGENT_DATA_TYPES_RESULT, AGENT_DATA_TYPES_RESULT_VALUES);
 
 #define AGENT_DATA_TYPE_TYPE_VALUES\
     EDM_NO_TYPE,                                                                   \
@@ -597,7 +597,7 @@ DEFINE_ENUM(AGENT_DATA_TYPES_RESULT, AGENT_DATA_TYPES_RESULT_VALUES);
     EDM_STRING_NO_QUOTES_TYPE                                                      \
 
 
-DEFINE_ENUM(AGENT_DATA_TYPE_TYPE, AGENT_DATA_TYPE_TYPE_VALUES);
+MU_DEFINE_ENUM_WITHOUT_INVALID(AGENT_DATA_TYPE_TYPE, AGENT_DATA_TYPE_TYPE_VALUES);
 
 struct AGENT_DATA_TYPE_TAG
 {
@@ -642,7 +642,7 @@ struct AGENT_DATA_TYPE_TAG
     } value;
 };
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 MOCKABLE_FUNCTION(, AGENT_DATA_TYPES_RESULT, AgentDataTypes_ToString, STRING_HANDLE, destination, const AGENT_DATA_TYPE*, value);
 

@@ -7,8 +7,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "azure_c_shared_utility/optionhandler.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
-#include "iothub_client_ll.h"
+#include "umock_c/umock_c_prod.h"
+#include "iothub_client_core_ll.h"
+#include "internal/iothubtransport.h"
 #include "azure_c_shared_utility/const_defines.h"
 
 #ifdef __cplusplus
@@ -22,9 +23,9 @@ static STATIC_VAR_UNUSED const char* RETRY_CONTROL_OPTION_SAVED_OPTIONS = "retry
 
 typedef enum RETRY_ACTION_TAG
 {
-	RETRY_ACTION_RETRY_NOW,
-	RETRY_ACTION_RETRY_LATER,
-	RETRY_ACTION_STOP_RETRYING
+    RETRY_ACTION_RETRY_NOW,
+    RETRY_ACTION_RETRY_LATER,
+    RETRY_ACTION_STOP_RETRYING
 } RETRY_ACTION;
 
 struct RETRY_CONTROL_INSTANCE_TAG;
@@ -43,4 +44,4 @@ MOCKABLE_FUNCTION(, int, is_timeout_reached, time_t, start_time, unsigned int, t
 }
 #endif
 
-#endif // IOTHUB_CLIENT_RETRY_CONTROL 
+#endif // IOTHUB_CLIENT_RETRY_CONTROL

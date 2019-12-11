@@ -14,10 +14,10 @@
 #include "parson.h"
 #include "azure_c_shared_utility/vector.h"
 
-DEFINE_ENUM_STRINGS(DATA_MARSHALLER_RESULT, DATA_MARSHALLER_RESULT_VALUES);
+MU_DEFINE_ENUM_STRINGS_WITHOUT_INVALID(DATA_MARSHALLER_RESULT, DATA_MARSHALLER_RESULT_VALUES);
 
 #define LOG_DATA_MARSHALLER_ERROR \
-    LogError("(result = %s)", ENUM_TO_STRING(DATA_MARSHALLER_RESULT, result));
+    LogError("(result = %s)", MU_ENUM_TO_STRING(DATA_MARSHALLER_RESULT, result));
 
 typedef struct DATA_MARSHALLER_HANDLE_DATA_TAG
 {
@@ -41,16 +41,16 @@ DATA_MARSHALLER_HANDLE DataMarshaller_Create(SCHEMA_MODEL_TYPE_HANDLE modelHandl
     DATA_MARSHALLER_HANDLE_DATA* result;
 
     /*Codes_SRS_DATA_MARSHALLER_99_019:[ DataMarshaller_Create shall return NULL if any argument is NULL.]*/
-    if (modelHandle == NULL) 
+    if (modelHandle == NULL)
     {
         result = NULL;
-        LogError("(result = %s)", ENUM_TO_STRING(DATA_MARSHALLER_RESULT, DATA_MARSHALLER_INVALID_ARG));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(DATA_MARSHALLER_RESULT, DATA_MARSHALLER_INVALID_ARG));
     }
     else if ((result = (DATA_MARSHALLER_HANDLE_DATA*)malloc(sizeof(DATA_MARSHALLER_HANDLE_DATA))) == NULL)
     {
         /* Codes_SRS_DATA_MARSHALLER_99_048:[On any other errors not explicitly specified, DataMarshaller_Create shall return NULL.] */
         result = NULL;
-        LogError("(result = %s)", ENUM_TO_STRING(DATA_MARSHALLER_RESULT, DATA_MARSHALLER_ERROR));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(DATA_MARSHALLER_RESULT, DATA_MARSHALLER_ERROR));
     }
     else
     {
@@ -363,4 +363,3 @@ DATA_MARSHALLER_RESULT DataMarshaller_SendData_ReportedProperties(DATA_MARSHALLE
     }
     return result;
 }
- 

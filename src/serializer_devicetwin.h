@@ -41,7 +41,7 @@ static void serializer_ingest(DEVICE_TWIN_UPDATE_STATE update_state, const unsig
         {
             /*all is fine*/
         }
-        
+
         free(copyOfPayload);
     }
 }
@@ -67,7 +67,7 @@ static int deviceMethodCallback(const char* method_name, const unsigned char* pa
 
         /*Codes_SRS_SERIALIZERDEVICETWIN_02_022: [ deviceMethodCallback shall call EXECUTE_METHOD passing the userContextCallback, method_name and the null terminated string build before. ]*/
         METHODRETURN_HANDLE mr = EXECUTE_METHOD(userContextCallback, method_name, payloadZeroTerminated);
-        
+
         if (mr == NULL)
         {
             LogError("failure in EXECUTE_METHOD");
@@ -119,7 +119,7 @@ static int deviceMethodCallback(const char* method_name, const unsigned char* pa
     IOTHUB_CLIENT_CONVENIENCE_HANDLE_TYPE, \
     IOTHUB_CLIENT_LL_HANDLE_TYPE
 
-DEFINE_ENUM(IOTHUB_CLIENT_HANDLE_TYPE, IOTHUB_CLIENT_HANDLE_TYPE_VALUES)
+MU_DEFINE_ENUM_WITHOUT_INVALID(IOTHUB_CLIENT_HANDLE_TYPE, IOTHUB_CLIENT_HANDLE_TYPE_VALUES)
 
 typedef union IOTHUB_CLIENT_HANDLE_VALUE_TAG
 {
@@ -138,7 +138,7 @@ typedef struct SERIALIZER_DEVICETWIN_PROTOHANDLE_TAG /*it is called "PROTOHANDLE
     IOTHUB_CLIENT_HANDLE_VARIANT iothubClientHandleVariant;
     void* deviceAssigned;
 } SERIALIZER_DEVICETWIN_PROTOHANDLE;
- 
+
 static VECTOR_HANDLE g_allProtoHandles=NULL; /*contains SERIALIZER_DEVICETWIN_PROTOHANDLE*/
 
 static int lazilyAddProtohandle(const SERIALIZER_DEVICETWIN_PROTOHANDLE* protoHandle)
@@ -147,14 +147,14 @@ static int lazilyAddProtohandle(const SERIALIZER_DEVICETWIN_PROTOHANDLE* protoHa
     if ((g_allProtoHandles == NULL) && ((g_allProtoHandles = VECTOR_create(sizeof(SERIALIZER_DEVICETWIN_PROTOHANDLE))) == NULL))
     {
         LogError("failure in VECTOR_create");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
         if (VECTOR_push_back(g_allProtoHandles, protoHandle, 1) != 0)
         {
             LogError("failure in VECTOR_push_back");
-            result = __FAILURE__;
+            result = MU_FAILURE;
 
             /*leave it as it was*/
 
@@ -349,13 +349,13 @@ static void IoTHubDeviceTwin_Destroy_Impl(void* model)
                 LogError("INTERNAL ERROR");
             }
             }/*switch*/
+
+             /*Codes_SRS_SERIALIZERDEVICETWIN_02_017: [ IoTHubDeviceTwin_Destroy_Impl shall call CodeFirst_DestroyDevice. ]*/
+            CodeFirst_DestroyDevice(protoHandle->deviceAssigned);
+
+            /*Codes_SRS_SERIALIZERDEVICETWIN_02_018: [ IoTHubDeviceTwin_Destroy_Impl shall remove the IoTHubClient_Handle and the device handle from the recorded set. ]*/
+            VECTOR_erase(g_allProtoHandles, protoHandle, 1);
         }
-
-        /*Codes_SRS_SERIALIZERDEVICETWIN_02_017: [ IoTHubDeviceTwin_Destroy_Impl shall call CodeFirst_DestroyDevice. ]*/
-        CodeFirst_DestroyDevice(protoHandle->deviceAssigned);
-
-        /*Codes_SRS_SERIALIZERDEVICETWIN_02_018: [ IoTHubDeviceTwin_Destroy_Impl shall remove the IoTHubClient_Handle and the device handle from the recorded set. ]*/
-        VECTOR_erase(g_allProtoHandles, protoHandle, 1);
 
         /*Codes_SRS_SERIALIZERDEVICETWIN_02_019: [ If the recorded set of IoTHubClient handles is zero size, then the set shall be destroyed. ]*/
         if (VECTOR_size(g_allProtoHandles) == 0) /*lazy init means more work @ destroy time*/
@@ -433,7 +433,7 @@ static IOTHUB_CLIENT_RESULT IoTHubDeviceTwin_SendReportedState_Impl(void* model,
 
 #define DECLARE_DEVICETWIN_MODEL(name, ...)    \
     DECLARE_MODEL(name, __VA_ARGS__)           \
-    static name* C2(IoTHubDeviceTwin_Create, name)(IOTHUB_CLIENT_HANDLE iotHubClientHandle)                                                                                         \
+    static name* MU_C2(IoTHubDeviceTwin_Create, name)(IOTHUB_CLIENT_HANDLE iotHubClientHandle)                                                                                         \
     {                                                                                                                                                                               \
         SERIALIZER_DEVICETWIN_PROTOHANDLE protoHandle;                                                                                                                              \
         protoHandle.iothubClientHandleVariant.iothubClientHandleType = IOTHUB_CLIENT_CONVENIENCE_HANDLE_TYPE;                                                                       \
@@ -441,12 +441,12 @@ static IOTHUB_CLIENT_RESULT IoTHubDeviceTwin_SendReportedState_Impl(void* model,
         return (name*)IoTHubDeviceTwinCreate_Impl(#name, sizeof(name), &protoHandle);                                                                                               \
     }                                                                                                                                                                               \
                                                                                                                                                                                     \
-    static void C2(IoTHubDeviceTwin_Destroy, name) (name* model)                                                                                                                    \
+    static void MU_C2(IoTHubDeviceTwin_Destroy, name) (name* model)                                                                                                                    \
     {                                                                                                                                                                               \
         IoTHubDeviceTwin_Destroy_Impl(model);                                                                                                                                       \
     }                                                                                                                                                                               \
                                                                                                                                                                                     \
-    static name* C2(IoTHubDeviceTwin_LL_Create, name)(IOTHUB_CLIENT_LL_HANDLE iotHubClientLLHandle)                                                                                 \
+    static name* MU_C2(IoTHubDeviceTwin_LL_Create, name)(IOTHUB_CLIENT_LL_HANDLE iotHubClientLLHandle)                                                                                 \
     {                                                                                                                                                                               \
         SERIALIZER_DEVICETWIN_PROTOHANDLE protoHandle;                                                                                                                              \
         protoHandle.iothubClientHandleVariant.iothubClientHandleType = IOTHUB_CLIENT_LL_HANDLE_TYPE;                                                                                \
@@ -454,15 +454,15 @@ static IOTHUB_CLIENT_RESULT IoTHubDeviceTwin_SendReportedState_Impl(void* model,
         return (name*)IoTHubDeviceTwinCreate_Impl(#name, sizeof(name), &protoHandle);                                                                                               \
     }                                                                                                                                                                               \
                                                                                                                                                                                     \
-    static void C2(IoTHubDeviceTwin_LL_Destroy, name) (name* model)                                                                                                                 \
+    static void MU_C2(IoTHubDeviceTwin_LL_Destroy, name) (name* model)                                                                                                                 \
     {                                                                                                                                                                               \
         IoTHubDeviceTwin_Destroy_Impl(model);                                                                                                                                       \
     }                                                                                                                                                                               \
-    static IOTHUB_CLIENT_RESULT C2(IoTHubDeviceTwin_LL_SendReportedState, name) (name* model, IOTHUB_CLIENT_REPORTED_STATE_CALLBACK deviceTwinCallback, void* context)              \
+    static IOTHUB_CLIENT_RESULT MU_C2(IoTHubDeviceTwin_LL_SendReportedState, name) (name* model, IOTHUB_CLIENT_REPORTED_STATE_CALLBACK deviceTwinCallback, void* context)              \
     {                                                                                                                                                                               \
         return IoTHubDeviceTwin_SendReportedState_Impl(model, deviceTwinCallback, context);                                                                                         \
     }                                                                                                                                                                               \
-    static IOTHUB_CLIENT_RESULT C2(IoTHubDeviceTwin_SendReportedState, name) (name* model, IOTHUB_CLIENT_REPORTED_STATE_CALLBACK deviceTwinCallback, void* context)                 \
+    static IOTHUB_CLIENT_RESULT MU_C2(IoTHubDeviceTwin_SendReportedState, name) (name* model, IOTHUB_CLIENT_REPORTED_STATE_CALLBACK deviceTwinCallback, void* context)                 \
     {                                                                                                                                                                               \
         return IoTHubDeviceTwin_SendReportedState_Impl(model, deviceTwinCallback, context);                                                                                         \
     }                                                                                                                                                                               \
