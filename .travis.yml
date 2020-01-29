@@ -30,7 +30,7 @@ before_install:
 
   - findAndReplace() { sed -i'' -e"s|$1|$2|g" "$3"; }
   - buildExampleSketch() {
-      EXAMPLE_SKETCH=$PWD/examples/iothub_ll_telemetry_sample/telemetry_sample.c.ino;
+      EXAMPLE_SKETCH=$PWD/examples/iothub_ll_telemetry_sample/iothub_ll_telemetry_sample.ino;
 
       arduino --verbose-build --verify --board $BOARD $EXAMPLE_SKETCH;
     }
