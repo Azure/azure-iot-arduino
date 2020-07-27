@@ -64,7 +64,12 @@ You should have the following ready before beginning with any board:
 
 4. Update IoT Hub Connection string in `iot_configs.h`
 
-5. Navigate to where your esp8266 board package is located, typically in `C:\Users\<your username>\AppData\Local\Arduino15\packages` on Windows and `~/.arduino15/packages/` on Linux
+5. Configure board library using the automation script and `python3`. If you choose this method you can skip step 6.
+    - Clone this repo `git clone https://github.com/Azure/azure-iot-arduino.git` or download the script [directly](https://raw.githubusercontent.com/Azure/azure-iot-arduino/master/scripts/automate_board_config.py).
+    - Run the script E.x.: `python3 automate_board_config.py` and select appropriate options.
+    - Note: if you update or reinstall your board library in Arduino you will need to run this script again.
+
+6. Navigate to where your esp8266 board package is located, typically in `C:\Users\<your username>\AppData\Local\Arduino15\packages` on Windows and `~/.arduino15/packages/` on Linux
 	
 - Locate the board's `Arduino.h` (`hardware/esp8266/<board package version>/cores/esp8266/` and comment out the line containing `#define round(x)`, around line 137.
 
@@ -76,11 +81,11 @@ You should have the following ready before beginning with any board:
 	
 	- Note3: Due to RAM limits, you must select just one CERT define.
 
-6. Run the sample.
+7. Run the sample.
 	
-7. Access the [SparkFun Get Started](https://azure.microsoft.com/en-us/documentation/samples/iot-hub-c-thingdev-getstartedkit/) tutorial to learn more about Microsoft Sparkfun Dev Kit.
+8. Access the [SparkFun Get Started](https://azure.microsoft.com/en-us/documentation/samples/iot-hub-c-thingdev-getstartedkit/) tutorial to learn more about Microsoft Sparkfun Dev Kit.
 
-8. Access the [Huzzah Get Started](https://azure.microsoft.com/en-us/documentation/samples/iot-hub-c-huzzah-getstartedkit/) tutorial to learn more about Microsoft Huzzah Dev Kit.
+9. Access the [Huzzah Get Started](https://azure.microsoft.com/en-us/documentation/samples/iot-hub-c-huzzah-getstartedkit/) tutorial to learn more about Microsoft Huzzah Dev Kit.
 
 ## ESP32
 
@@ -104,7 +109,12 @@ You should have the following ready before beginning with any board:
 
 4. Update IoT Hub Connection string in `iot_configs.h`
 
-5. Navigate to where your esp32 board package is located, typically in `C:\Users\<your username>\AppData\Local\Arduino15\packages` on Windows and `~/.arduino15/packages/` on Linux
+5. Configure board library using the automation script and `python3`. If you choose this method you can skip step 6.
+    - Clone this repo `git clone https://github.com/Azure/azure-iot-arduino.git` or download the script [directly](https://raw.githubusercontent.com/Azure/azure-iot-arduino/master/scripts/automate_board_config.py).
+    - Run the script E.x.: `python3 automate_board_config.py` and select appropriate options.
+    - Note: if you update or reinstall your board library in Arduino you will need to run this script again.
+
+6. Navigate to where your esp32 board package is located, typically in `C:\Users\<your username>\AppData\Local\Arduino15\packages` on Windows and `~/.arduino15/packages/` on Linux
 
 	- Navigate deeper in to `hardware/esp8266/<board package version>/` where the `platform.txt` file lives.
 	
@@ -112,11 +122,11 @@ You should have the following ready before beginning with any board:
 	
 	- Alternatively, or for later versions of the Board Package, add the define `-DDONT_USE_UPLOADTOBLOB` to `build.extra_flags=` in `platform.txt` or a `platform.local.txt` that you create.
 	
-6. Run the sample.
+7. Run the sample.
 	
-7. Access the [SparkFun Get Started](https://azure.microsoft.com/en-us/documentation/samples/iot-hub-c-thingdev-getstartedkit/) tutorial to learn more about Microsoft Sparkfun Dev Kit.
+8. Access the [SparkFun Get Started](https://azure.microsoft.com/en-us/documentation/samples/iot-hub-c-thingdev-getstartedkit/) tutorial to learn more about Microsoft Sparkfun Dev Kit.
 
-8. Access the [Huzzah Get Started](https://azure.microsoft.com/en-us/documentation/samples/iot-hub-c-huzzah-getstartedkit/) tutorial to learn more about Microsoft Huzzah Dev Kit.
+9. Access the [Huzzah Get Started](https://azure.microsoft.com/en-us/documentation/samples/iot-hub-c-huzzah-getstartedkit/) tutorial to learn more about Microsoft Huzzah Dev Kit.
 
 ## License
 
