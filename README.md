@@ -9,7 +9,7 @@ This is the location of the Arduino-specific source files for the
 
 [AzureIoTHub Arduino published library](https://github.com/Azure/azure-iot-arduino). 
 
-This library is a port of the [Microsoft Azure IoT device SDK for C](https://github.com/Azure/azure-iot-sdks/blob/master/c/readme.md) to Arduino. It allows you to use several Arduino compatible boards with Azure IoT Hub. Please submit any contribution directly to [azure-iot-sdks](https://github.com/Azure/azure-iot-sdks).
+This library is a port of the [Microsoft Azure IoT device SDK for C](https://github.com/Azure/azure-iot-sdk-c) to Arduino. It allows you to use several Arduino compatible boards with Azure IoT Hub. Please submit any contribution directly to [azure-iot-sdks](https://github.com/Azure/azure-iot-sdks).
 
 Currently supported hardware:
 
