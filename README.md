@@ -83,9 +83,9 @@ You should have the following ready before beginning with any board:
 
 7. Run the sample.
 	
-8. Access the [SparkFun Get Started](https://azure.microsoft.com/en-us/documentation/samples/iot-hub-c-thingdev-getstartedkit/) tutorial to learn more about Microsoft Sparkfun Dev Kit.
+8. Access the [SparkFun Get Started](https://github.com/Azure-Samples/iot-hub-c-thingdev-getstartedkit) tutorial to learn more about Microsoft Sparkfun Dev Kit.
 
-9. Access the [Huzzah Get Started](https://azure.microsoft.com/en-us/documentation/samples/iot-hub-c-huzzah-getstartedkit/) tutorial to learn more about Microsoft Huzzah Dev Kit.
+9. Access the [Huzzah Get Started](https://github.com/Azure-Samples/iot-hub-c-huzzah-getstartedkit) tutorial to learn more about Microsoft Huzzah Dev Kit.
 
 ## ESP32
 
