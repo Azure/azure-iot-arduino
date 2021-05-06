@@ -15,5 +15,5 @@
 #include "iothub_message.h"
 #include "certs/certs.h"
 
-#define AzureIoTHubVersion "1.5.0"
+#define AzureIoTHubVersion "1.6.0"
 #endif
