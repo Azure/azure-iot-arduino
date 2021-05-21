@@ -5,7 +5,8 @@ language: generic
 env:
   global:
     - IDE_VERSION=1.8.10
-    - build.extra_flags= "-DDONT_USE_UPLOADTOBLOB" 
+  flags:
+    - DDONT_USE_UPLOADTOBLOB 
   matrix:
     - BOARD="arduino:samd:nano_33_iot"
 before_install:
