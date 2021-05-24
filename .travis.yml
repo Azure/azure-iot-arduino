@@ -5,8 +5,9 @@ language: generic
 env:
   global:
     - IDE_VERSION=1.8.10
-  flags:
-    - DDONT_USE_UPLOADTOBLOB 
+  branches:
+    only:
+    - ArduinoNano33IoT_example_support
   matrix:
     - BOARD="arduino:samd:nano_33_iot"
 before_install:
