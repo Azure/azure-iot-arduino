@@ -59,7 +59,7 @@ compiler.define=-DARDUINO=
 compiler.readelf.cmd=arm-none-eabi-readelf
 
 # this can be overriden in boards.txt
-build.extra_flags= "-DDONT_USE_UPLOADTOBLOB" 
+build.extra_flags= -DDONT_USE_UPLOADTOBLOB 
 
 # These can be overridden in platform.local.txt
 compiler.c.extra_flags=
