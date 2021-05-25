@@ -40,9 +40,8 @@ before_install:
     }
 install:
   - arduino --install-library "AzureIoTUtility"
-  - arduino --install-library "AzureIoTSocket_WiFi"
   - arduino --install-library "AzureIoTProtocol_MQTT"
   - arduino --install-library "AzureIoTProtocol_HTTP"
   - ln -s $PWD $HOME/Arduino/libraries/.
 script:
-  - buildExampleSketch 
+  - buildExampleSketch iothub_ll_telemetry_sample
