@@ -45,4 +45,4 @@ install:
   - arduino --install-library "AzureIoTProtocol_HTTP"
   - ln -s $PWD $HOME/Arduino/libraries/.
 script:
-  - buildExampleSketch()
+  - buildExampleSketch $EXAMPLE_SKETCH
