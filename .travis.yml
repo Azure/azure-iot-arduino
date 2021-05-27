@@ -7,8 +7,6 @@ env:
     - IDE_VERSION=1.6.11
   matrix:
     - BOARD="arduino:samd:nano_33_iot"
-    - BOARD="esp8266:esp8266:huzzah:FlashSize=4M3M,CpuFrequency=80"
-    - BOARD="esp8266:esp8266:thing"
 before_install:
   - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
   - sleep 3
@@ -48,6 +46,7 @@ install:
   - arduino --install-library "AzureIoTUtility"
   - arduino --install-library "AzureIoTProtocol_HTTP"
   - arduino --install-library "AzureIoTProtocol_MQTT"
+  - arduino --install-library "AzureIoTHub"
   - ln -s $PWD $HOME/Arduino/libraries/.
 script:
   - buildExampleSketch iothub_ll_telemetry_sample
