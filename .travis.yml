@@ -32,7 +32,7 @@ before_install:
     fi
   - findAndReplace() { sed -i'' -e"s|$1|$2|g" "$3"; }
   - buildExampleSketch() {
-      EXAMPLE_SKETCH=$PWD/examples/ArduinoNano33iot/iothub_ll_telemetry_sample.ino;
+      EXAMPLE_SKETCH=$PWD/examples/ArduinoNano33iot/iothub_ll_telemetry_sample/iothub_ll_telemetry_sample.ino;
 
       if [[ "$BOARD" =~ "esp8266:esp8266:" ]]; then
         findAndReplace WiFi101 ESP8266WiFi $EXAMPLE_SKETCH;
