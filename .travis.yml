@@ -43,10 +43,10 @@ before_install:
       arduino --verbose-build --verify --board $BOARD $EXAMPLE_SKETCH;
     }
 install:
+  - arduino --install-library "AzureIoTHub"
   - arduino --install-library "AzureIoTUtility"
   - arduino --install-library "AzureIoTProtocol_HTTP"
   - arduino --install-library "AzureIoTProtocol_MQTT"
-  - arduino --install-library "AzureIoTHub"
   - ln -s $PWD $HOME/Arduino/libraries/.
 script:
   - buildExampleSketch iothub_ll_telemetry_sample
