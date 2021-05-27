@@ -49,4 +49,4 @@ install:
   - arduino --install-library "AzureIoTProtocol_HTTP"
   - ln -s $PWD $HOME/Arduino/libraries/.
 script:
-  - buildExampleSketch simplesample_http
+  - buildExampleSketch iothub_ll_telemetry_sample
