@@ -7,8 +7,8 @@
 /**
  * WiFi setup
  */
-#define IOT_CONFIG_WIFI_SSID            ""
-#define IOT_CONFIG_WIFI_PASSWORD        ""
+#define IOT_CONFIG_WIFI_SSID            "InfoNet-BB"
+#define IOT_CONFIG_WIFI_PASSWORD        "pakistan313"
 
 /**
  * IoT Hub Device Connection String setup
@@ -16,7 +16,7 @@
  * navigating to IoT Devices tab on the left, and creating (or selecting an existing) IoT Device. 
  * Then click on the named Device ID, and you will have able to copy the Primary or Secondary Device Connection String to this sample.
  */
-#define DEVICE_CONNECTION_STRING    ""
+#define DEVICE_CONNECTION_STRING    "HostName=ArduinoNano33IoT.azure-devices.net;DeviceId=ArduinoNano33IoTDevice;SharedAccessKey=0XrwEGjbnYkbIglMadXZ/+SOIXHrn5eVxn7EoCIBqPM="
 
 // The protocol you wish to use should be uncommented
 //
