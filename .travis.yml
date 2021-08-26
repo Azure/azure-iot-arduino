@@ -4,11 +4,9 @@
 language: generic
 env:
   global:
-    - IDE_VERSION=1.8.10
+    - IDE_VERSION=1.6.11
   matrix:
-    - BOARD="esp8266:esp8266:huzzah:FlashSize=4M3M,CpuFrequency=80"
-    - BOARD="esp8266:esp8266:thing"
-    - BOARD="esp32:esp32:huzzah"
+    - BOARD="arduino:samd:nano_33_iot"
 before_install:
   - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
   - sleep 3
@@ -17,28 +15,38 @@ before_install:
   - tar xf arduino-$IDE_VERSION-linux64.tar.xz
   - mv arduino-$IDE_VERSION $HOME/arduino-ide
   - export PATH=$PATH:$HOME/arduino-ide
+  - if [[ "$BOARD" =~ "arduino:samd:" ]]; then
+      arduino --install-boards arduino:samd;
+      arduino --install-library WiFiNINA;
+      arduino --install-library WiFi101;
+      arduino --install-library RTCZero;
+      arduino --install-library NTPClient;
+    fi
   - if [[ "$BOARD" =~ "esp8266:esp8266:" ]]; then
       arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" --install-boards esp8266:esp8266;
       arduino --pref "boardsmanager.additional.urls=" --save-prefs;
       arduino --install-library NTPClient;
-    fi
-  - if [[ "$BOARD" =~ "esp32:esp32:" ]]; then
-      arduino --pref "boardsmanager.additional.urls=https://dl.espressif.com/dl/package_esp32_index.json" --install-boards esp32:esp32;
-      arduino --pref "boardsmanager.additional.urls=" --save-prefs;
       arduino --install-library NTPClient;
     fi
-
   - findAndReplace() { sed -i'' -e"s|$1|$2|g" "$3"; }
   - buildExampleSketch() {
-      EXAMPLE_SKETCH=$PWD/examples/iothub_ll_telemetry_sample/iothub_ll_telemetry_sample.ino;
+      EXAMPLE_SKETCH=$PWD/examples/ArduinoNano33iot/iothub_ll_telemetry_sample/iothub_ll_telemetry_sample.ino;
+
+      if [[ "$BOARD" =~ "esp8266:esp8266:" ]]; then
+        findAndReplace WiFi101 ESP8266WiFi $EXAMPLE_SKETCH;
+        findAndReplace WiFiSSLClient WiFiClientSecure $EXAMPLE_SKETCH;
+        findAndReplace WiFiUdp WiFiUdp $EXAMPLE_SKETCH; 
+      fi
+
+      cat $EXAMPLE_SKETCH;
 
       arduino --verbose-build --verify --board $BOARD $EXAMPLE_SKETCH;
     }
 install:
+  - arduino --install-library "AzureIoTHub"
   - arduino --install-library "AzureIoTUtility"
-  - arduino --install-library "AzureIoTSocket_WiFi"
-  - arduino --install-library "AzureIoTProtocol_MQTT"
   - arduino --install-library "AzureIoTProtocol_HTTP"
+  - arduino --install-library "AzureIoTProtocol_MQTT"
   - ln -s $PWD $HOME/Arduino/libraries/.
 script:
-  - buildExampleSketch telemetry_sample.c
+  - buildExampleSketch iothub_ll_telemetry_sample
