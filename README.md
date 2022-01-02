@@ -1,14 +1,15 @@
 # AzureIoTHub - Azure IoT Hub library for Arduino
 
-The Azure Iot library for Arduino is under review and will be re-released soon. 
-
-In the meantime, for Arduino scenarios we recommend using the Embedded C SDK in one of the following Samples:
-
-- [ESP8266 Arduino Sample](https://github.com/Azure/azure-sdk-for-c/tree/main/sdk/samples/iot/aziot_esp8266)
-- [ESP32 Arduino Sample](https://github.com/Azure/azure-sdk-for-c/tree/main/sdk/samples/iot/aziot_esp32)
-- [Realtek Ameba Sample](https://github.com/Azure/azure-sdk-for-c/tree/main/sdk/samples/iot/aziot_realtek_amebaD)
-
-
+> ### Stop! Before you proceed:
+>
+> _This Arduino Library is an **older version** and it is neither maintained nor supported anymore._
+>
+> _It is kept here for **reference only** and should not be used for any new development._
+>
+> _If you’re looking for an Arduino Library you should use the new version: [aka.ms/arduino](https://aka.ms/arduino)_
+>
+>_You can find more information about it in this [IoT Techcommunity blog post](https://techcommunity.microsoft.com/t5/internet-of-things-blog/arduino-library-for-azure-iot/ba-p/3034455)._
+>
 ## License
 
 See [LICENSE](LICENSE) file.
