@@ -2,7 +2,7 @@
 
 > ### Stop! Before you proceed:
 >
-> _This Arduino Library is an **older version** and it is neither maintained nor supported anymore._
+> _This Arduino Library is deprecated._
 >
 > _It is kept here for **reference only** and should not be used for any new development._
 >
